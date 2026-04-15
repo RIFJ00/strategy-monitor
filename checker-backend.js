@@ -1,28 +1,25 @@
 /**
- * 会議体ダッシュボード (最終安定・レイアウト調整版)
- * * [修正点]
- * 1. 状態列の配置: ボタンとラベルを中央揃えから「左揃え」に変更。
- * 2. 所管プルダウン: ラベルを「全ての所管」とし、省庁の建制順でソート。
- * 3. 分野プルダウン: 表の表示順（未読優先）での出現順に。
- * 4. メインソート: [未読/チェック用] > [エラー] > [インポート順 (createdAt)]。
+ * 会議体ダッシュボード (回数取得・近接検索版)
+ * [修正点]
+ * 1. 近接検索ロジック: ページ全体ではなく、会議名が出現した場所の直後から情報を探索。
+ * 2. 回数抽出: 「第〇回」という表記を抽出し、表示・保存に対応。
+ * 3. 複数会議対応: 同一URL内でも会議名ごとに正しい日付を取得可能に。
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { 
-  getAuth, signInAnonymously, onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  getFirestore, collection, onSnapshot, query, doc, updateDoc, serverTimestamp, writeBatch, getDoc, setDoc
+  getFirestore, collection, onSnapshot, query, doc, updateDoc, 
+  serverTimestamp, writeBatch, getDoc, setDoc 
 } from 'firebase/firestore';
 import { 
   Search, CheckCircle, Clock, AlertTriangle, ExternalLink, 
-  RefreshCw, Edit3, X, Database, PlayCircle, Loader2, Tag, Filter, Save, UserCheck, WifiOff, CheckSquare, Square, StopCircle, Play, RotateCcw, Eye, ArrowUpDown, EyeOff, Bookmark, MapPin, Power
+  RefreshCw, Edit3, X, Database, PlayCircle, Loader2, Tag, Filter, 
+  Save, UserCheck, WifiOff, CheckSquare, Square, StopCircle, 
+  Play, RotateCcw, Eye, ArrowUpDown, EyeOff, Bookmark, MapPin, Power, Hash
 } from 'lucide-react';
 
-// ==========================================
-// ⚠️ Firebaseプロジェクト設定 (seisakuresearch00)
-// ==========================================
 const myFirebaseConfig = {
   apiKey: "AIzaSyBx5e752GWfvJDZ3lEx0IcArxjvCEz7S2M",
   authDomain: "seisakuresearch00.firebaseapp.com",
@@ -42,6 +39,7 @@ const getMeetingsCol = () => collection(db, 'artifacts', TARGET_APP_ID, 'public'
 const getMeetingDoc = (id) => doc(db, 'artifacts', TARGET_APP_ID, 'public', 'data', 'meetings', id);
 const getSystemConfigDoc = () => doc(db, 'artifacts', TARGET_APP_ID, 'public', 'data', 'config', 'system');
 
+// 日付パース用
 const parseJapaneseDateToTs = (dateStr) => {
   if (!dateStr || typeof dateStr !== 'string') return 0;
   try {
@@ -133,6 +131,7 @@ export default function App() {
             latestDateString: d['直近開催日'] || d.latestDateString || '',
             latestDateTimestamp: d.latestDateTimestamp || parseJapaneseDateToTs(d['直近開催日'] || d.latestDateString),
             previousDateString: d.previousDateString || '',
+            meetingRound: d.meetingRound || '', // 追加：第〇回
             status: d.status || 'unchanged',
             isManual: d.isManual || false, 
             lastCheckedAt: d.lastCheckedAt,
@@ -148,6 +147,7 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  // ソート・フィルタリング・サマリー計算は前回同様のため省略（ロジック維持）
   const baseSortedMeetings = useMemo(() => {
     return [...meetings].sort((a, b) => {
       const isUnreadA = a.status === 'updated';
@@ -215,14 +215,6 @@ export default function App() {
     });
   }, [meetings, statusFilter, fieldFilter, agencyFilter, searchQuery, sortMode]);
 
-  const toggleAutoUpdate = async () => {
-    const newVal = !isAutoUpdateOn;
-    setIsAutoUpdateOn(newVal);
-    try {
-      await setDoc(getSystemConfigDoc(), { autoUpdateEnabled: newVal, lastModifiedAt: serverTimestamp() }, { merge: true });
-    } catch (e) { alert("設定保存失敗"); }
-  };
-
   const executeCheck = async (meeting) => {
     if (!meeting.url || !user) return;
     setCheckingId(meeting.id);
@@ -243,29 +235,87 @@ export default function App() {
         }
         throw new Error("Proxy Error");
       };
+
       const html = await fetchWithProxy(meeting.url, currentAbortController.current.signal);
       clearTimeout(timeoutId);
-      const dateRegex = /(20\d{2}|令和\s*?\d+|令和\s*?元)年\s*?(\d{1,2})月\s*?(\d{1,2})日/g;
-      let newestTs = 0; let newestRawStr = ''; let match;
-      while ((match = dateRegex.exec(html)) !== null) {
-        const ts = parseJapaneseDateToTs(match[0]);
-        if (ts > newestTs) { newestTs = ts; newestRawStr = match[0]; }
+
+      // --- 近接探索ロジックの開始 ---
+      // 1. HTML内の会議名の位置を探す（タグを除去したプレーンテキストで実施）
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      const plainText = tempDiv.innerText || tempDiv.textContent;
+      
+      const meetingIndex = plainText.indexOf(meeting.meetingName);
+      if (meetingIndex === -1) {
+        throw new Error("会議名が見つかりません");
       }
-      const westernStr = formatToWestern(newestRawStr);
+
+      // 2. 会議名の直後（例えば500文字以内）を探索対象にする
+      const searchText = plainText.substring(meetingIndex, meetingIndex + 800);
+
+      // 3. 探索対象の中から「日付」と「回数」を探す
+      const dateRegex = /(20\d{2}|令和\s*?\d+|令和\s*?元)年\s*?(\d{1,2})月\s*?(\d{1,2})日/g;
+      const roundRegex = /第\s*?(\d+|元)\s*?回/g;
+
+      let match;
+      let foundDateTs = 0;
+      let foundDateStr = '';
+      let foundRound = '';
+
+      // 直近の日付を1つ取得
+      if ((match = dateRegex.exec(searchText)) !== null) {
+        foundDateTs = parseJapaneseDateToTs(match[0]);
+        foundDateStr = match[0];
+      }
+
+      // 回数（第〇回）を1つ取得
+      const roundMatch = roundRegex.exec(searchText);
+      if (roundMatch) {
+        foundRound = roundMatch[0];
+      }
+
+      const westernStr = formatToWestern(foundDateStr);
       const registeredTs = meeting.latestDateTimestamp || 0;
+      
       let updatePayload = { lastCheckedAt: serverTimestamp(), errorMessage: null };
-      if (newestTs > registeredTs) {
+      
+      if (foundDateTs > registeredTs) {
         updatePayload.latestDateString = westernStr;
-        updatePayload.latestDateTimestamp = newestTs;
+        updatePayload.latestDateTimestamp = foundDateTs;
         updatePayload.previousDateString = meeting.latestDateString;
+        updatePayload.meetingRound = foundRound; // 回数を保存
         updatePayload.status = 'updated';
         updatePayload.isManual = false; 
         updatePayload['直近開催日'] = westernStr;
+      } else {
+        // 日付が変わっていなくても、回数が取れていて前のと違えば更新（任意）
+        if (foundRound && foundRound !== meeting.meetingRound) {
+           updatePayload.meetingRound = foundRound;
+        }
       }
+      
       await updateDoc(getMeetingDoc(meeting.id), updatePayload);
     } catch (e) {
-      if (e.name !== 'AbortError') await updateDoc(getMeetingDoc(meeting.id), { status: 'error', errorMessage: "通信失敗", lastCheckedAt: serverTimestamp() });
-    } finally { setCheckingId(null); clearTimeout(timeoutId); currentAbortController.current = null; }
+      if (e.name !== 'AbortError') {
+        await updateDoc(getMeetingDoc(meeting.id), { 
+          status: 'error', 
+          errorMessage: e.message || "通信失敗", 
+          lastCheckedAt: serverTimestamp() 
+        });
+      }
+    } finally { 
+      setCheckingId(null); 
+      clearTimeout(timeoutId); 
+      currentAbortController.current = null; 
+    }
+  };
+
+  const toggleAutoUpdate = async () => {
+    const newVal = !isAutoUpdateOn;
+    setIsAutoUpdateOn(newVal);
+    try {
+      await setDoc(getSystemConfigDoc(), { autoUpdateEnabled: newVal, lastModifiedAt: serverTimestamp() }, { merge: true });
+    } catch (e) { alert("設定保存失敗"); }
   };
 
   const handleBulkStart = (targets) => {
@@ -470,7 +520,6 @@ export default function App() {
                          {selectedIds.has(m.id) ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5 text-gray-200" />}
                        </button>
                     </td>
-                    {/* ステータス列（左揃えに修正） */}
                     <td className="px-4 py-3 align-middle whitespace-nowrap">
                       <div className="flex flex-col gap-1.5 min-w-[210px] items-start">
                         {m.status === 'updated' ? (
@@ -507,6 +556,10 @@ export default function App() {
                       <div className="flex flex-wrap items-center gap-2 mt-1 opacity-70">
                         <span className="flex items-center gap-1 text-[8px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 shadow-sm"><Tag className="w-2.5 h-2.5" /> {m.relatedField || '-'}</span>
                         <span className="flex items-center gap-1 text-[8px] font-black text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 shadow-sm"><MapPin className="w-2.5 h-2.5" /> {m.agency}</span>
+                        {/* 回数表示の追加 */}
+                        {m.meetingRound && (
+                          <span className="flex items-center gap-1 text-[8px] font-black text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 shadow-sm"><Hash className="w-2.5 h-2.5" /> {m.meetingRound}</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 align-middle text-center">
@@ -543,7 +596,7 @@ export default function App() {
             </div>
             <div className="flex gap-1.5">
               {isPaused ? (
-                <><button onClick={() => setIsPaused(false)} className="p-2.5 bg-green-50 text-green-600 rounded-xl active:scale-90 border border-green-100 shadow-sm"><Play className="w-4 h-4 fill-current" /></button><button onClick={handleCancel} className="p-2.5 bg-red-50 text-red-600 rounded-xl active:scale-90 border border-red-100 shadow-sm"><RotateCcw className="w-4 h-4" /></button></>
+                <><button onClick={() => setIsPaused(false)} className="p-2.5 bg-green-50 text-green-600 rounded-xl active:scale-90 border border-green-100 shadow-sm"><Play className="w-4 h-4 fill-current" /></button><button onClick={() => { setIsBulkChecking(false); setQueue([]); }} className="p-2.5 bg-red-50 text-red-600 rounded-xl active:scale-90 border border-red-100 shadow-sm"><RotateCcw className="w-4 h-4" /></button></>
               ) : (
                 <button onClick={() => setIsPaused(true)} className="p-2.5 bg-orange-50 text-orange-600 rounded-xl active:scale-90 border border-orange-100 shadow-sm"><StopCircle className="w-5 h-5 fill-current" /></button>
               )}
@@ -554,6 +607,7 @@ export default function App() {
         </div>
       )}
 
+      {/* モーダル類 */}
       {confirmBatch && (
         <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-8 text-center space-y-5 animate-in zoom-in-95 duration-200">
