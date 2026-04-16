@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日米関税交渉分析レポート 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Overview: Goal: Provide context Method: Text summaries (Expanded)
+        - Current Tariffs: Goal: Inform Method: HTML tables Chartjs bars Library: Chartjs
+        - Negotiation Timeline: Goal: Inform chronologically Method: Structured text (Updated)
+        - Negotiation Result (NEW): Goal: Detail the final agreement Method: Structured text
+        - Negotiation Scenarios: Goal: Compare/Understand Method: Side-by-side text HTML/CSS timelines Chartjs bar chart Library: Chartjs
+        - Probability Analysis: Goal: Explore determinants Method: HTML tables Chartjs pie/doughnut Library: Chartjs
+        - Sector-Specific Impact (NEW): Goal: Deep dive into key industries Method: Text analysis, Chartjs radar chart Library: Chartjs
+        - Impact & Recommendations: Goal: Inform consequences/advice Method: Structured text Chartjs bars Library: Chartjs
+        - Detailed Report (Renamed): Goal: Provide full source Method: Scrollable HTML (Updated with new structure and latest info)
+        - Audio Summary: Goal: Provide audio overview Method: HTML5 audio player
+        - LP Infographic (NEW): Goal: Present key report data visually Method: Infographic layout with Chartjs charts styled HTML elements Palette: Energetic & Playful Library: Chartjs (Updated)
+        - AI Analysis (NEW): Goal: Provide AI-driven insights Method: Client-side Gemini API call Library: None
+        - CONFIRMATION: NO SVG graphics used NO Mermaid JS used -->
+    <style>
+        body { font-family: 'Inter', sans-serif; position: relative; }
+        /* Base SPA Styles */
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 320px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; max-height: 500px;} }
+        .nav-button { transition: background-color 0.3s, color 0.3s; }
+        .nav-button.active { background-color: #2563eb; color: white; }
+        .nav-button:not(.active):hover { background-color: #dbeafe; }
+        .tab-button { transition: background-color 0.3s, border-color 0.3s; }
+        .tab-button.active { border-color: #2563eb; background-color: #eff6ff; color: #2563eb; }
+        .tab-button:not(.active):hover { background-color: #f3f4f6; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        
+        .full-report-content { max-height: 70vh; overflow-y: auto; padding: 1rem; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.375rem; }
+        .full-report-content h1 { font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem; color: #1e3a8a; }
+        .full-report-content h2 { font-size: 1.5rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1e40af; }
+        .full-report-content h3 { font-size: 1.25rem; font-weight: bold; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #1d4ed8; }
+        .full-report-content p { margin-bottom: 1rem; line-height: 1.6; color: #374151; }
+        .full-report-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; color: #374151; }
+        .full-report-content li { margin-bottom: 0.5rem; }
+        .full-report-content strong { font-weight: bold; color: #111827; }
+        .full-report-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.875rem; }
+        .full-report-content th, .full-report-content td { border: 1px solid #d1d5db; padding: 0.5rem; text-align: left; }
+        .full-report-content th { background-color: #f3f4f6; font-weight: bold; color: #1f2937;}
+        audio { width: 100%; margin-top: 1rem; }
+
+        /* Infographic Specific Styles (within #lp-infographic) */
+        #lp-infographic { background-color: #f0f9ff; /* Light blue background for LP tab */ padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        #lp-infographic .lp-section-title { color: #073B4C; border-bottom: 3px solid #FFD166; padding-bottom: 0.5rem; margin-bottom: 1.5rem; font-size: 1.75rem; font-weight: bold; }
+        #lp-infographic .lp-card { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); margin-bottom: 1.5rem; padding: 1.5rem; }
+        #lp-infographic .lp-timeline { position: relative; padding-left: 2rem; }
+        #lp-infographic .lp-timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 4px; background-color: #FFD166; border-radius: 2px; }
+        #lp-infographic .lp-timeline-item { position: relative; margin-bottom: 1.5rem; }
+        #lp-infographic .lp-timeline-item::before { content: ''; position: absolute; left: -2.1rem; top: 0.3rem; width: 1.25rem; height: 1.25rem; background-color: #118AB2; border: 3px solid #FFD166; border-radius: 50%; z-index: 1; }
+        #lp-infographic .lp-timeline-item-content { background-color: #f8fafc; padding: 1rem; border-radius: 0.375rem; border: 1px solid #e2e8f0; }
+        #lp-infographic h1, #lp-infographic h2, #lp-infographic h3, #lp-infographic h4 { color: #073B4C; } /* Dark blue for headings */
+        #lp-infographic p, #lp-infographic li { color: #334155; line-height: 1.6; }
+        #lp-infographic .lp-accent-text { color: #118AB2; font-weight: bold; } /* Main blue for accents */
+        #lp-infographic .lp-stat-number { font-size: 2.5rem; font-weight: bold; color: #118AB2; }
+        #lp-infographic .lp-sub-stat { font-size: 1rem; color: #475569; }
+        #lp-infographic .lp-icon-list li::before { content: '🔹'; margin-right: 0.5em; color: #118AB2; }
+        #lp-infographic .chart-container-infographic { position: relative; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; height: 300px; max-height: 350px; }
+         @media (min-width: 768px) { #lp-infographic .chart-container-infographic { height: 350px; max-height: 400px;} }
+        
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;}
+        .modal-overlay.active { display: flex; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;}
+        .modal-title { font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; color: #1e40af; }
+        .modal-body p { margin-bottom: 0.75rem; line-height: 1.6; color: #374151; font-size: 0.875rem;}
+        .modal-close-button { background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: medium; transition: background-color 0.2s; margin-top: 1.5rem; display: block; margin-left: auto;}
+        .modal-close-button:hover { background-color: #1d4ed8; }
+        #externalVariablesList li span { cursor: pointer; text-decoration: underline; color: #2563eb; }
+        #externalVariablesList li span:hover { color: #1d4ed8; }
+
+        /* AI Analysis Styles */
+        #ai-chat-container { max-height: 400px; overflow-y: auto; }
+        .ai-message, .user-message { padding: 0.75rem; border-radius: 0.5rem; line-height: 1.6; }
+        .user-message { background-color: #e0f2fe; color: #0c4a6e; }
+        .ai-message { background-color: #f1f5f9; color: #334155; white-space: pre-wrap; }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #2563eb;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <h1 class="text-xl sm:text-2xl font-bold text-blue-700">日米関税交渉分析 2025</h1>
+                <nav class="hidden md:flex space-x-1" id="desktop-nav">
+                    <!-- Navigation buttons for various sections -->
+                    <button data-target="overview" class="nav-button px-3 py-2 rounded-md text-sm font-medium active">概要</button>
+                    <button data-target="current-tariffs" class="nav-button px-3 py-2 rounded-md text-sm font-medium">関税の現状</button>
+                    <button data-target="timeline" class="nav-button px-3 py-2 rounded-md text-sm font-medium">交渉の経緯</button>
+                    <button data-target="negotiation-result" class="nav-button px-3 py-2 rounded-md text-sm font-medium">交渉結果</button>
+                    <button data-target="scenarios" class="nav-button px-3 py-2 rounded-md text-sm font-medium">交渉シナリオ</button>
+                    <button data-target="probability" class="nav-button px-3 py-2 rounded-md text-sm font-medium">蓋然性分析</button>
+                    <button data-target="sector-impact" class="nav-button px-3 py-2 rounded-md text-sm font-medium">分野別影響</button>
+                    <button data-target="implications" class="nav-button px-3 py-2 rounded-md text-sm font-medium">影響と提言</button>
+                    <button data-target="full-report" class="nav-button px-3 py-2 rounded-md text-sm font-medium">詳細レポート</button>
+                    <button data-target="audio-summary" class="nav-button px-3 py-2 rounded-md text-sm font-medium">音声概要</button>
+                    <button data-target="lp-infographic" class="nav-button px-3 py-2 rounded-md text-sm font-medium">LP</button>
+                    <button data-target="ai-analysis" class="nav-button px-3 py-2 rounded-md text-sm font-medium">AI分析</button>
+                </nav>
+                <div class="md:hidden">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-button" class="text-slate-500 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu, expanded by button -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
+            <nav class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <button data-target="overview" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium active">概要</button>
+                <button data-target="current-tariffs" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">関税の現状</button>
+                <button data-target="timeline" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">交渉の経緯</button>
+                <button data-target="negotiation-result" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">交渉結果</button>
+                <button data-target="scenarios" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">交渉シナリオ</button>
+                <button data-target="probability" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">蓋然性分析</button>
+                <button data-target="sector-impact" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">分野別影響</button>
+                <button data-target="implications" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">影響と提言</button>
+                <button data-target="full-report" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">詳細レポート</button>
+                <button data-target="audio-summary" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">音声概要</button>
+                <button data-target="lp-infographic" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">LP</button>
+                <button data-target="ai-analysis" class="nav-button block w-full text-left px-3 py-2 rounded-md text-base font-medium">AI分析</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Overview Section -->
+        <div id="overview" class="content-section active">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">関税交渉の概要</h2>
+
+            <div class="space-y-6">
+                <div>
+                    <h4 class="text-lg font-semibold mb-2 text-blue-700 border-b-2 border-blue-200 pb-1">はじめに：交渉の背景と目的</h4>
+                    <p class="text-sm sm:text-base leading-relaxed">
+                        本レポートは、2025年現在のトランプ政権下で展開される日米関税交渉の複雑な力学を解き明かすことを目的とする。米国の「アメリカ・ファースト」政策に基づき、対日貿易赤字の削減と国内産業の保護を掲げて導入された一連の関税措置は、戦後の自由貿易体制を前提としてきた日本経済に根本的な挑戦を突きつけている。米国が課した「相互関税」、及び通商拡大法232条に基づく鉄鋼・アルミニウム、自動車・同部品への追加関税に対し、日本政府はこれらの措置の見直しを求め、厳しい交渉に臨んでいたが、7月23日に最終合意に至った。
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-2 text-blue-700 border-b-2 border-blue-200 pb-1">分析の核心：交渉の帰結</h4>
+                    <p class="text-sm sm:text-base leading-relaxed mb-4">
+                        本分析の中核は、交渉が取りうる二つの対極的な帰結、すなわち「成功」と「失敗・膠着」シナリオのシミュレーションにあった。最終的に、交渉は「日本の大幅な譲歩を伴う限定的な成功」という形で決着した。これは、最悪の事態である全面的な関税発動は回避されたものの、特に農業分野において日本が大きな譲歩を強いられた結果である。
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-md font-semibold mb-2 text-green-600">交渉妥結のポイント</h3>
+                            <p class="text-xs leading-relaxed">米国による相互関税の上乗せ部分（14%）は撤回され、8月1日から通知されていた25%の新関税も発動が見送られた。しかし、その見返りとして、日本は農産物分野でCPTPPを上回る市場開放を受け入れた。</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-md font-semibold mb-2 text-red-600">残された課題</h3>
+                            <p class="text-xs leading-relaxed">最大の焦点であった自動車への追加関税は12.5%へ引き下げられたものの、撤廃には至らなかった。鉄鋼・アルミニウムへの高関税も維持され、日本経済にとって厳しい状況は続く。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-semibold mb-2 text-blue-700 border-b-2 border-blue-200 pb-1">主要な争点と最終合意</h4>
+                    <p class="text-sm sm:text-base leading-relaxed">
+                        交渉の最大の争点は、日本の基幹産業である**自動車**への追加関税の扱いと、米国が求める**農産物**の市場開放であった。最終的に、日本が農産物で大幅に譲歩することで、米国は相互関税の追加発動を見送り、自動車関税を半減させるという政治的決着が図られた。日本は最悪の事態を免れたが、鉄鋼という基幹産業への圧力は残り、今後の経済運営に大きな課題を残す結果となった。
+                    </p>
+                </div>
+                 <div>
+                    <h4 class="text-lg font-semibold mb-2 text-blue-700 border-b-2 border-blue-200 pb-1">本レポートの構成</h4>
+                    <p class="text-sm sm:text-base leading-relaxed">
+                        このインタラクティブ・レポートでは、まず現在課されている関税の詳細と、本日までの交渉経緯を概観する。続いて、成功・失敗の各シナリオを詳細に分析し、その実現可能性を評価する。さらに、特に影響の大きい産業分野別の分析を行い、最終的に日本の政策担当者および企業への戦略的提言を提示する。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Tariffs Section -->
+        <div id="current-tariffs" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">関税の現状（2025年）</h2>
+            <p class="mb-6 text-sm sm:text-base leading-relaxed">
+                2025年初頭、トランプ政権は米国の貿易赤字削減、国内産業保護、交渉レバレッジ確保を目的として、日本を含む多くの国に新たな関税措置を導入した。これらの関税は複雑に絡み合い、日本経済に多大な影響を及ぼす可能性がある。以下に主要な関税措置の概要を示す。
+            </p>
+            <div class="space-y-6">
+                <!-- Tariff Details Cards -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-sky-700">1 相互関税 (Reciprocal Tariffs)</h3>
+                    <p class="text-sm mb-2">全輸入品に一律10%の基本関税に加え、対米貿易赤字が大きい国に追加関税を上乗せする。</p>
+                    <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                        <li>日本への適用: <span class="font-bold text-green-600">基本10%のみ維持</span></li>
+                        <li>備考: 7月23日の合意により、上乗せ14%部分および8月1日から予定されていた新25%関税は発動が見送られた。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-sky-700">2 通商拡大法232条関税（鉄鋼・アルミニウム）</h3>
+                    <p class="text-sm mb-2">安全保障上の脅威を理由に、鉄鋼・アルミ輸入品に追加関税を再導入または強化した。</p>
+                    <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                        <li>鉄鋼: <span class="font-bold text-red-600">50%（維持）</span></li>
+                        <li>アルミニウム: <span class="font-bold text-red-600">50%（維持）</span></li>
+                        <li>備考: 7月23日の合意でも関税は維持された。ただし、一部品目での関税割当（TRQ）導入に向けた協議が継続される。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-sky-700">3 通商拡大法232条関税（自動車・同部品）</h3>
+                    <p class="text-sm mb-2">同様に安全保障を理由に、自動車・自動車部品に追加関税を課した。</p>
+                    <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                        <li>自動車・部品: <span class="font-bold text-orange-600">15%</span></li>
+                        <li>備考: 7月23日の合意により、25%から12.5%へ引き下げ。既存の2.5%と合わせて合計15%となる。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-md">
+                <p class="font-bold">関税措置の相互関連性と政策の流動性</p>
+                <p class="text-sm mt-1">これらの関税措置は独立しておらず、複雑に絡み合い、重層的な圧力構造を形成している。一部措置の適用停止と他措置の発動を組み合わせるなど、動的な運用が見られる。発表された税率も最終的なものではなく、交渉のオープニング・ビッドである可能性も考慮すべきである。**特に鉄鋼・アルミ関税については、6月15日の米商務長官の発言により、緩和の可能性が極めて低くなっている。**</p>
+            </div>
+             <div class="mt-8">
+                <h3 class="text-lg font-semibold mb-3 text-center">主要関税率 可視化</h3>
+                <div class="chart-container">
+                    <canvas id="tariffsChart"></canvas>
+                </div>
+                <p class="text-xs text-center mt-2 text-slate-600">注：相互関税は日本向け合計税率を示す。</p>
+            </div>
+        </div>
+
+        <!-- Negotiation Timeline Section -->
+        <div id="timeline" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">交渉の経緯</h2>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold mb-4 text-sky-700">主要な会合の経緯</h3>
+                <ul class="list-disc list-inside space-y-3 text-sm">
+                    <li><strong>4月7日:</strong> 日米首脳電話会談。関税問題について交渉を開始することで合意した。</li>
+                    <li><strong>4月16日:</strong> ワシントンDCにて初の閣僚級会合。</li>
+                    <li><strong>4月30日:</strong> 米有力シンクタンクが日米関係や関税協議の状況について議論した。</li>
+                    <li><strong>5月1日（米国時間）:</strong> ワシントンDCにて第2回閣僚級会合。</li>
+                    <li><strong>5月20日頃:</strong> ワシントンDCにて事務レベル協議。</li>
+                    <li><strong>5月23日～24日:</strong> ワシントンDCにて第3回閣僚級会合。</li>
+                    <li><strong>5月23日:</strong> 石破総理がトランプ大統領と約45分間の電話会談を実施。</li>
+                    <li><strong>5月25日:</strong> 赤澤大臣が帰国。</li>
+                    <li><strong>5月28日～29日:</strong> 日本側から米国に対し、半導体製品の購入等の提案がなされている可能性が報じられた。</li>
+                    <li><strong>5月29日:</strong> 赤澤経済再生担当大臣が第4回閣僚級交渉のためワシントンへ出発。</li>
+                    <li><strong>5月30日（現地時間）:</strong> ワシントンDCにて第4回閣僚級会合が開催された。6月中旬にカナダで開催されるG7サミットでの首脳間合意も視野に協議を継続することで一致した。</li>
+                    <li><strong>5月30日:</strong> 米国際貿易裁判所が一部関税措置の適用停止を命じたと報じられる。</li>
+                    <li><strong>6月1日:</strong> 日本政府関係者から「合意に向け前進があった」との認識が示された。</li>
+                    <li><strong>6月3日～4日:</strong> トランプ米大統領が鉄鋼とアルミニウムへの輸入関税を25％から50％へ引き上げると表明し、6月4日に発効。</li>
+                    <li><strong>6月5日:</strong> 日本政府、米国の鉄鋼・アルミ関税引き上げに対し「極めて遺憾」との声明を発表。林官房長官は記者会見で、WTOへの提訴を含む対応を検討すると表明。</li>
+                    <li><strong>6月6日 (JST 午前):</strong> 日本政府が、米国の関税引き上げ措置に対し、WTO紛争解決手続きに基づく協議を要請する準備に入ったと正式に発表。これに対し、ラトニック米商務長官は声明で日本の動きを牽制。</li>
+                    <li><strong>6月7日 (現地時間):</strong> 第5回閣僚級交渉がワシントンDCで開催。双方の主張は平行線に終わるも、事務レベルでの対話継続を確認。</li>
+                    <li><strong>6月8日 (JST 午前):</strong> 石破総理は記者団に対し、「対話のドアは常に開かれている」と述べ、対話継続の意思を強調。</li>
+                    <li><strong>6月9日 (JST 午前):</strong> 米ホワイトハウスが、中国とのハイレベル通商交渉を6月中旬から再開すると正式に発表。グリアUSTR代表が交渉を主導するとし、対日交渉とのスケジュール調整が新たな課題として浮上。</li>
+                    <li class="bg-blue-50 p-2 rounded-md border-l-4 border-blue-400"><strong>6月10日 (現地時間):</strong> 赤澤経済再生担当大臣とグリアUSTR代表がオンライン形式で会合。具体的な進展はなく、双方の従来の主張を再確認するに留まる。</li>
+                    <li class="bg-amber-50 p-2 rounded-md border-l-4 border-amber-400"><strong>6月12日 (現地時間):</strong> 米中ハイレベル通商交渉がジュネーブで開始。米側は「構造的な問題の解決」を、中国側は「全ての追加関税の撤廃」をそれぞれ要求し、交渉は冒頭から難航が予想される。</li>
+                    <li class="bg-red-50 p-2 rounded-md border-l-4 border-red-400"><strong>6月15日 (米国時間):</strong> ラトニック米商務長官がテレビインタビューで、「日本からの意味のある譲歩がない限り、50%の鉄鋼・アルミニウム関税は交渉の余地がない」と明言。米国の姿勢がさらに硬化したことが明確になる。</li>
+                    <li class="bg-red-50 p-2 rounded-md border-l-4 border-red-400"><strong>6月16日 (JST 午前):</strong> ワシントンDCで第6回閣僚級会合が開催されるも、鉄鋼・アルミ関税、自動車関税に関する双方の溝は埋まらず。日本側が提示した対米投資拡大案に対し、米国側は「具体的な貿易不均衡の是正には繋がらない」と不満を表明。協議は次回日程の合意なく終了し、交渉は事実上の停滞状態に。</li>
+                    <li class="bg-blue-50 p-2 rounded-md border-l-4 border-blue-400"><strong>6月16日 (現地時間):</strong> G7サミット（於：カナダ）の機会に、石破総理とトランプ大統領が短時間の首脳会談を実施。「交渉の加速」で一致するも、具体的な指示はなく、象徴的なやり取りに終わる。</li>
+                    <li class="bg-blue-50 p-2 rounded-md border-l-4 border-blue-400"><strong>6月18日:</strong> 日本も政府高官が、WTOに対し米国の鉄鋼・アルミ関税に関する紛争解決手続きに基づく協議を視野に入れる必要があると発言。</li>
+                    <li class="bg-amber-50 p-2 rounded-md border-l-4 border-amber-400"><strong>6月25日:</strong> 米中通商交渉が具体的成果なく終了。対立の根深さが改めて浮き彫りになる。</li>
+                    <li class="bg-blue-50 p-2 rounded-md border-l-4 border-blue-400"><strong>6月27日:</strong> 林官房長官が記者会見で「対話のドアは常に開かれているが、他の手続きも視野に入れる必要がある」と表明。</li>
+                    <li class="bg-red-50 p-2 rounded-md border-l-4 border-red-400"><strong>6月29日（現地時間）:</strong> 赤澤経済再生担当大臣が期限切れを前に打開を図るため訪米し、ラトニック商務長官、グリアUSTR代表と個別に会談。日本側は、エネルギーやインフラ分野での協力拡大を提案するも、米側は農業分野での具体的な市場開放を求める姿勢を崩さず、議論は平行線に終わる。</li>
+                    <li class="bg-red-50 p-2 rounded-md border-l-4 border-red-400"><strong>6月30日 (JST 午前):</strong> 米政府高官が匿名を条件に、7月9日の期限切れを前に日本が農産物市場開放で具体的な譲歩を示さなければ、相互関税の上乗せ分（14%）を発動する最終準備に入ったと発言したことが報じられる。赤澤大臣は一連の会談後、記者団に対し「状況は極めて厳しい」と述べ、具体的な進展がなかったことを認めた。</li>
+                    <li class="bg-red-50 p-2 rounded-md border-l-4 border-red-400"><strong>6月30日 (現地時間):</strong> トランプ大統領、SNSで日本の対米自動車輸出について「長年の不平等」と非難し、「自動車関税を引き下げることはない」と改めて明言。交渉の最大のネックが自動車問題であることが再確認される。</li>
+                    <li class="bg-red-50 p-2 rounded-md border-l-4 border-red-400"><strong>7月8日 (JST 午前):</strong> トランプ大統領が石破総理宛の親書をSNSで公開。書簡は「日本の関税や非関税障壁による長期の貿易赤字から脱却する必要がある」と指摘し、8月1日から日本からの輸入品に25%の関税を課すことを通知した。これは現在の相互関税を含む24%を上回る水準である。一方で、9日までの相互関税の適用停止期限は8月1日に延期するとし、日本が市場を開放し障壁を撤廃する場合には「調整を検討する」と、交渉の余地も示唆した。</li>
+                    <li class="bg-green-50 p-2 rounded-md border-l-4 border-green-400"><strong>7月23日 (JST 午前):</strong> 日米両政府が関税交渉で最終合意したと発表。相互関税の上乗せ分（14%）と8月1日から予定されていた25%の新関税は見送られる一方、日本は牛肉、豚肉などの農産物分野でCPTPPを上回る水準の市場開放を受け入れた。自動車関税は25%から12.5%に引き下げられ、既存の2.5%と合わせて15%となることで決着。鉄鋼・アルミ関税は維持される。</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-sky-700">交渉の雰囲気</h3>
+                <p class="text-sm leading-relaxed">
+                    6月を通じて交渉が停滞した後、7月に入り、期限切れを目前にして緊張は頂点に達している。トランプ大統領からの親書は、日本に対し最後通牒を突きつけた形となり、交渉の雰囲気は極めて厳しい。米国は農業分野での譲歩を絶対条件としており、日本側にはほとんど交渉の余地が残されていない。
+                </p>
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-sky-700">交渉における「スピード対実質」のジレンマと新たな動き</h3>
+                <p class="text-sm leading-relaxed">
+                    相互関税の上乗せ部分の適用停止期限（7月9日）が目前に迫る中、日本は「実質」を確保するどころか、全面的な関税発動という最悪の事態をいかに回避するかという、極めて追い詰められた状況にある。「スピード」を優先して大幅な譲歩に応じるか、あるいは関税発動を甘受してWTOでの戦いに持ち込むか、日本政府は重大な決断を迫られている。
+                </p>
+            </div>
+        </div>
+        
+        <!-- NEW: Negotiation Result Section -->
+        <div id="negotiation-result" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">交渉結果（2025年7月23日合意）</h2>
+            <p class="mb-6 text-sm sm:text-base leading-relaxed">
+                2025年7月23日、日米両政府は関税交渉の最終合意を発表した。交渉は、日本が農産物分野で大幅な譲歩を行う一方、米国が最も広範な影響を及ぼす相互関税の追加発動を見送り、自動車関税を半減させるという形で決着した。「限定的な成功」とも評価できるが、多くの課題が残る結果となった。
+            </p>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-green-700">合意の主要なポイント（米国側の譲歩・見送り）</h3>
+                    <ul class="list-disc list-inside text-sm space-y-2 pl-4">
+                        <li><strong>相互関税の追加措置の見送り:</strong> 交渉開始時に90日間適用が停止されていた14%の上乗せ分、および7月8日の大統領親書で通知された新たな25%関税は、いずれも発動が見送られた。これにより、広範な品目への壊滅的な影響は回避された。</li>
+                        <li><strong>自動車・同部品関税の引き下げ:</strong> 25%の追加関税は12.5%に引き下げられた。これにより、既存の関税2.5%と合わせて、日本から輸出される自動車等への関税は合計15%となる。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-red-700">合意の主要なポイント（日本側の譲歩）</h3>
+                    <ul class="list-disc list-inside text-sm space-y-2 pl-4">
+                        <li><strong>農産物市場の追加開放:</strong> 米国産の牛肉、豚肉、乳製品、小麦、オレンジなど主要な農産物について、CPTPP（環太平洋パートナーシップ協定）で合意した水準を上回る市場アクセス（関税率の引き下げ、無関税輸入枠の拡大）を認める。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-orange-600">結論が見送られた・維持された主要な関税</h3>
+                    <ul class="list-disc list-inside text-sm space-y-2 pl-4">
+                        <li><strong>鉄鋼・アルミニウムへの50%関税:</strong> この高率関税は合意後も維持される。ただし、米側は日本からの要請に基づき、一部の重要品目について関税割当（TRQ）を設けるための事務レベル協議を開始することには同意した。</li>
+                    </ul>
+                </div>
+                 <div class="mt-4 bg-sky-100 border-l-4 border-sky-500 text-sky-700 p-4 rounded-md">
+                    <p class="font-bold">総括</p>
+                    <p class="text-sm mt-1">今回の合意は、米国が最も重視した農産物分野で日本が譲歩し、その見返りとして米国が最も広範な影響を持つ相互関税の発動を回避し、自動車関税を半減させるという、政治的な取引の側面が強い。日本は最悪の事態を免れたが、鉄鋼という基幹産業への圧力は残り、今後の経済運営に大きな課題を残す結果となった。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenarios Section -->
+        <div id="scenarios" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">交渉シナリオ分析</h2>
+            <p class="mb-6 text-sm sm:text-base leading-relaxed">
+                日米関税交渉は、日本の経済にとって極めて重要な局面である。「成功」と「失敗・膠着」の二つの主要シナリオを想定し、それぞれの定義、主要因、想定される道筋、そして日米間の譲歩・見返りの可能性を比較検討する。下のタブで各シナリオの詳細を切り替えてご覧いただきたい。<br>**7月8日のトランプ大統領からの親書は、日本に二者択一を迫るものであり、失敗・膠着シナリオの現実味を極限まで高めている。**
+            </p>
+            <div class="mb-6 border-b border-slate-300">
+                <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                    <button id="successScenarioTab" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm active">成功シナリオ</button>
+                    <button id="failureScenarioTab" class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">失敗・膠着シナリオ</button>
+                </nav>
+            </div>
+
+            <!-- Success Scenario Content -->
+            <div id="successScenarioContent">
+                <h3 class="text-xl font-semibold mb-3 text-green-700">成功シナリオ</h3>
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-green-600">日本にとっての「成功」の定義（中程度）</h4>
+                        <ul class="list-disc list-inside text-sm mt-2 space-y-1 pl-4">
+                            <li>相互関税の上乗せ部分（14%）の完全撤廃または大幅引き下げ。</li>
+                            <li>鉄鋼・アルミ関税の実質的適用除外または大幅TRQ獲得。（現状の50%への引き上げが撤回または大幅緩和されることが前提）</li>
+                            <li>不利な為替条項や過度なNTB譲歩の回避。</li>
+                            <li>自動車関税について、将来的な撤廃・削減への明確な道筋やコミットメント獲得。</li>
+                            <li>日本の譲歩は、農産物分野でCPTPP水準準拠など限定的範囲に留まる。</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-green-600">成功を可能にする主要因</h4>
+                        <ul class="list-disc list-inside text-sm mt-2 space-y-1 pl-4">
+                            <li>米国内の経済的懸念（インフレ、消費者負担増）の高まり。</li>
+                            <li>米国の政治的状況（大統領支持率低下、外交成果への希求）。</li>
+                            <li>効果的な日本の譲歩案（農産物市場アクセス、特定NTB是正、対米投資拡大）。</li>
+                            <li>米国内産業界からの圧力（日本から部品輸入に依存する産業など）。</li>
+                            <li>戦略的・地政学的連携の重視（日米同盟、対中戦略）。</li>
+                             <li>**米中交渉を前に、同盟国である日本との間で「成功例」を作るという米側の戦略的判断。**</li>
+                            <li>**米国内の司法判断が関税措置に否定的な方向に傾き、米政権への圧力となる。**</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-green-600">成功への道筋（シミュレーション）</h4>
+                        <ol class="list-decimal list-inside text-sm mt-2 space-y-2 pl-4">
+                            <li><strong>フェーズ1 (7月上旬): 期限切れ直前の危機回避</strong>
+                                <ul class="list-disc list-inside text-xs ml-4 mt-1">
+                                    <li>期限切れ直前、日本が農産物分野で米国が「誠意」と見なす譲歩案（CPTPP水準を若干上回るTRQ拡大など）を提示。</li>
+                                    <li>米国はこれを評価し、相互関税の上乗せ部分の適用停止を短期間（例：30日間）延長することで合意。</li>
+                                </ul>
+                            </li>
+                            <li><strong>フェーズ2 (夏): 政治的決断の局面</strong>
+                                <ul class="list-disc list-inside text-xs ml-4 mt-1">
+                                    <li>延長期間中に集中的な協議が行われ、自動車関税以外の分野でパッケージディールを模索。</li>
+                                    <li>日本は対米投資拡大などを追加で提示し、米国は相互関税上乗せ部分の完全撤廃で合意。</li>
+                                </ul>
+                            </li>
+                            <li><strong>フェーズ3 (晩夏-秋): 最終局面</strong>
+                                <ul class="list-disc list-inside text-xs ml-4 mt-1">
+                                    <li>鉄鋼・アルミ関税について、強硬姿勢は維持されるものの、特定品目に対するTRQなど限定的な救済措置で決着。</li>
+                                    <li>自動車関税: 即時撤廃は見送りも、将来的な見直しに関するサイドレターや米国内投資連動で曖昧な決着の可能性。</li>
+                                    <li>「ウィン・ウィン」の合意として発表。</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow overflow-x-auto">
+                        <h4 class="font-bold text-md text-green-600 mb-2">成功シナリオにおける日米間の譲歩・見返りの可能性</h4>
+                        <table class="min-w-full divide-y divide-slate-200 text-xs">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-slate-500 tracking-wider">日本側の譲歩分野</th>
+                                    <th class="px-3 py-2 text-left font-medium text-slate-500 tracking-wider">想定される譲歩内容例</th>
+                                    <th class="px-3 py-2 text-left font-medium text-slate-500 tracking-wider">米国側の見返り分野</th>
+                                    <th class="px-3 py-2 text-left font-medium text-slate-500 tracking-wider">想定される見返り内容例</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-200">
+                                <tr>
+                                    <td class="px-3 py-2">農産物市場アクセス</td>
+                                    <td class="px-3 py-2">特定品目（トウモロコシ、大豆、コメ等）のTRQ拡大または段階的関税削減</td>
+                                    <td class="px-3 py-2">相互関税</td>
+                                    <td class="px-3 py-2">日本に対する追加的相互関税（14%分）の完全撤廃</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2">非関税障壁（特定分野）</td>
+                                    <td class="px-3 py-2">特定の工業製品等に関する規制・基準の合理化・透明化</td>
+                                    <td class="px-3 py-2">232条鉄鋼・アルミ関税</td>
+                                    <td class="px-3 py-2">50%関税は維持も、一部品目で限定的なTRQ設定または適用除外</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2">経済安全保障協力・対米投資</td>
+                                    <td class="px-3 py-2">重要鉱物、サプライチェーン、先端技術、防衛装備品購入、造船業支援等における協力強化・投資拡大</td>
+                                    <td class="px-3 py-2">232条自動車関税</td>
+                                    <td class="px-3 py-2">即時撤廃困難だが、将来見直しコミットメント、米国内投資連動、追加関税回避サイドレター等</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failure Scenario Content -->
+            <div id="failureScenarioContent" class="hidden">
+                <h3 class="text-xl font-semibold mb-3 text-red-700">失敗・膠着シナリオ</h3>
+                 <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-red-600">日本にとっての「失敗」の定義</h4>
+                        <ul class="list-disc list-inside text-sm mt-2 space-y-1 pl-4">
+                            <li><strong>部分的失敗:</strong> 相互関税上乗せ14%の適用停止措置期限切れ。全発表関税（鉄鋼・アルミ50%含む）に直面。適用除外/TRQ獲得不可。</li>
+                            <li><strong>完全な失敗:</strong> 交渉決裂。米国が追加報復措置、将来対話拒否など二国間関係悪化。</li>
+                            <li><strong>膠着状態:</strong> 解決策なく無期限継続。関税は課されたまま、企業は長期的不確実性に直面。</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-red-600">失敗に至る主要因</h4>
+                        <ul class="list-disc list-inside text-sm mt-2 space-y-1 pl-4">
+                            <li>米国の非妥協的姿勢（特に自動車・鉄鋼関税を「交渉対象外」と堅持、鉄鋼・アルミ50%関税維持）。</li>
+                            <li>受け入れ不可能な米国の要求（大幅な農産物市場開放、拘束力ある為替条項等）。</li>
+                            <li>不十分な日本の譲歩（米国から見て見返り不足、国内政治による制約）。</li>
+                             <li>**米中交渉の再開により、米国の関心とリソースがそちらに集中し、対日交渉が停滞・後回しにされる。**</li>
+                            <li>米国内の政治的要因（保護主義的世論、関税恩恵産業のロビー活動）。</li>
+                            <li>日本の国内政治的要因（農業分野等の強い反対、政権基盤不安定さ）。</li>
+                            <li>誤算・コミュニケーション不足。</li>
+                        </ul>
+                    </div>
+                     <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-red-600">失敗への道筋（シミュレーション）</h4>
+                        <ol class="list-decimal list-inside text-sm mt-2 space-y-2 pl-4">
+                            <li><strong>交渉の停滞 (6月中旬-下旬):</strong>
+                                <ul class="list-disc list-inside text-xs ml-4 mt-1">
+                                    <li>閣僚級会合が進展なく終了し、交渉は事実上の停滞状態に。日本はWTO提訴を進める。</li>
+                                    <li>米国は期限切れを盾に、水面下で日本への圧力を強める。</li>
+                                </ul>
+                            </li>
+                            <li><strong>適用停止期限切れ・交渉決裂 (7月9日以降):</strong>
+                                <ul class="list-disc list-inside text-xs ml-4 mt-1">
+                                    <li>日本からの「満足のいく譲歩」がないまま期限を迎え、米国は相互関税の上乗せ分（14%）を発動。</li>
+                                    <li>交渉は正式決裂。日本は対抗措置（報復関税）とWTOでの全面的な争いを本格化させ、二国間関係は著しく悪化。</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-md">
+                        <p class="font-bold">失敗・膠着による影響</p>
+                        <p class="text-sm mt-1">失敗は、日米貿易関係に新たな保護主義的ベースラインを固定化し、<br>企業の投資判断やサプライチェーン戦略に根本的見直しを迫る。<br>膠着状態自体も不確実性を長期化させ、経済活動に大きなコストとなる。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold mb-3 text-center">成功要因 vs 失敗要因 比較</h3>
+                <div class="chart-container">
+                    <canvas id="factorsChart"></canvas>
+                </div>
+                <p class="text-xs text-center mt-2 text-slate-600">各要因の相対的な影響力を概念的に示す。</p>
+            </div>
+        </div>
+
+        <!-- Probability Analysis Section -->
+        <div id="probability" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">蓋然性分析</h2>
+            <p class="mb-6 text-sm sm:text-base leading-relaxed">
+                このセクションでは、交渉妥結前の時点における、成功と失敗の蓋然性を分析する。7月8日のトランプ大統領からの親書により、交渉は最終的な岐路に立たされていた。
+            </p>
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold mb-2 text-green-600">成功の可能性を高める要因</h3>
+                    <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                        <li>米国経済への圧力（インフレ、特定産業への打撃）。</li>
+                        <li>「交渉のテコ」としての関税（日本側の譲歩と引き換えに一部撤回し「勝利」宣言のインセンティブ）。</li>
+                        <li>地政学的な要請（日米同盟強化の必要性）。</li>
+                        <li>実行可能な日本の譲歩（農産物分野、特定NTB）。</li>
+                        <li>**米中交渉を前にした「ディールの実績作り」。**</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold mb-2 text-red-600">失敗・膠着の可能性を高める要因</h3>
+                    <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                        <li>米国の自動車・鉄鋼に関する強硬姿勢。</li>
+                        <li>トランプ政権の保護主義的信念。</li>
+                        <li>日本の譲歩余地の限界（国内政治事情）。</li>
+                        <li>**対立の先鋭化（日本のWTO提訴準備など）。**</li>
+                        <li>**米中交渉へのリソース集中による対日交渉の停滞。**</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-center text-sky-700">交渉結果の蓋然性評価（7月8日時点）</h3>
+                <div class="chart-container mx-auto" style="height: 250px; max-width: 400px;">
+                    <canvas id="probabilityChart"></canvas>
+                </div>
+                <p class="text-center mt-3 text-sm">
+                    7月8日の親書を受け、本レポートでは「失敗または膠着状態」の可能性を <span class="font-bold">75%</span>、<br>「限定的な成功」の可能性を <span class="font-bold">25%</span> と見積もっていた。最終的に後者のシナリオが実現した背景には、日本側の土壇場での大幅な譲歩があったものと分析される。
+                </p>
+                <div class="mt-4 bg-sky-100 border-l-4 border-sky-500 text-sky-700 p-3 rounded-md">
+                    <p class="font-bold">重要な留保事項</p>
+                    <p class="text-xs mt-1">この「成功」は限定的（相互関税上乗せ撤廃、鉄鋼・アルミの限定的救済措置）であり、<br>自動車関税は現状維持か曖昧な約束に留まる可能性が高い。<br>米国が自動車関税で一切譲歩を拒否し、鉄鋼・アルミ関税の引き上げを維持する場合、交渉は容易に決裂・膠着するリスクも十分にある。<br>**米国際貿易裁判所の判断が政権に不利な場合でも、<br>政権がそれを覆す手段を講じる可能性も考慮に入れる必要がある。**</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-2 text-slate-700">外部変数の影響</h3>
+                <ul id="externalVariablesList" class="list-disc list-inside text-sm space-y-1 pl-4">
+                    <li data-modal-title="米国経済の動向" data-modal-body="米国内の景気後退懸念やインフレ率の高止まりは、関税による消費者や企業への負担増を通じて、政権に関税緩和への圧力を強める可能性がある。逆に経済が堅調であれば、強硬な通商政策を継続する余地が生まれる。">米国経済の動向 <span>(詳細)</span></li>
+                    <li data-modal-title="米国の政治と世論" data-modal-body="大統領選挙や中間選挙を控えた政治的力学は、交渉姿勢に影響を与える可能性がある。支持率の変動や、関税政策に対する国内世論（特にスイングステートや産業界）の反応が重要となる。">米国の政治と世論 <span>(詳細)</span></li>
+                    <li data-modal-title="地政学的環境" data-modal-body="中国やロシアとの関係緊迫化など国際情勢の変化は、日米同盟の重要性を再認識させ、経済摩擦よりも安全保障上の連携を優先する動機となる可能性がある。一方で、特定国との対立が深まれば、保護主義的な動きを強める可能性もある。">地政学的環境 <span>(詳細)</span></li>
+                    <li data-modal-title="他の米国通商交渉の展開" data-modal-body="米国がEUやUSMCA再交渉などでどのような成果や姿勢を示すかは、対日交渉のパターンや期待値に影響を及ぼす可能性がある。特に、6月中旬から再開される米中ハイレベル通商交渉は、米国の交渉リソースと政治的関心を大きく占めるため、日米交渉の優先順位やスケジュールに直接的な影響を与える最大の外部変数である。">他の米国通商交渉の展開 <span>(詳細)</span></li>
+                    <li data-modal-title="IPEF/CPTPPの動向" data-modal-body="IPEF（インド太平洋経済枠組み）の交渉進展度合いやトランプ政権の関与姿勢、CPTPP（環太平洋パートナーシップ協定）への米国の復帰の可能性などは、アジア太平洋地域の経済秩序や米国の通商戦略全体の中で、日米交渉の位置づけに影響する。">IPEF/CPTPPの動向 <span>(詳細)</span></li>
+                    <li data-modal-title="米国内の司法判断（関税措置関連）" data-modal-body="米国際貿易裁判所などによる関税措置の合法性に関する判断は、交渉の新たな不確実要素となる。政権に不利な判断が出れば、交渉戦略の見直しを迫られる可能性があるが、政権が上訴などで対抗し影響が限定的となる可能性もある。最終的な司法判断とその執行状況が鍵となる。">米国内の司法判断（関税措置関連） <span>(詳細)</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- NEW: Sector-Specific Impact Section -->
+        <div id="sector-impact" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">分野別影響分析</h2>
+            <p class="mb-6 text-sm sm:text-base leading-relaxed">
+                日米関税交渉は、日本の各産業分野に異なる形で影響を及ぼす。ここでは特に影響が懸念される主要3分野（自動車、鉄鋼・アルミニウム、農業）について、その脆弱性と戦略的立ち位置を分析する。
+            </p>
+            <div class="grid lg:grid-cols-2 gap-6 items-center">
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-red-600">自動車産業</h4>
+                        <p class="text-sm mt-1">25%の関税は完成車メーカーだけでなく、広範な部品サプライヤーにも壊滅的打撃を与える。現地生産の拡大やサプライチェーンの見直しが急務だが、巨額の追加投資と時間が必要。交渉では最大の焦点であり、譲歩は極めて困難。</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-orange-600">鉄鋼・アルミニウム産業</h4>
+                        <p class="text-sm mt-1">50%という高関税は、事実上の市場からの締め出しに等しい。特殊鋼など代替困難な製品でのみ限定的な輸出が維持される可能性がある。適用除外やTRQ（関税割当）の獲得が交渉の焦点となるが、米国の保護主義的姿勢は強い。</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h4 class="font-bold text-md text-green-600">農業分野</h4>
+                        <p class="text-sm mt-1">日本側が交渉のカードとして市場開放を提示する可能性が最も高い分野。CPTPP水準を超える譲歩を求められる可能性があり、国内の生産者への影響が懸念される。一方で、これが他の産業を守るための戦略的譲歩となる側面も持つ。</p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                     <h3 class="text-lg font-semibold mb-3 text-center">主要分野の脆弱性比較</h3>
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="sectorImpactChart"></canvas>
+                    </div>
+                     <p class="text-xs text-center mt-2 text-slate-600">各分野が直面するリスクを多角的に評価。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Implications and Recommendations Section -->
+        <div id="implications" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">戦略的インプリケーションと日本への提言</h2>
+            <p class="mb-6 text-sm sm:text-base leading-relaxed">
+                日米関税交渉の結果は、日本の経済および外交政策に重大な影響を及ぼす。<br>各シナリオがもたらす経済的影響を概観し、日本の交渉担当者への政策提言、<br>そして企業における危機管理計画について考察する。<br>**米国の姿勢硬化と交渉停滞を受け、すべての関係者は失敗・膠着シナリオへの備えを本格化させる必要がある。**
+            </p>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-rose-700">各シナリオがもたらす経済的影響</h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-bold text-md text-green-600 mb-1">成功（限定的）シナリオ</h4>
+                            <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                                <li>関税負担一部軽減。</li>
+                                <li>自動車・鉄鋼産業は引き続きコスト負担（数兆円規模の影響も）。</li>
+                                <li>投資環境は改善も、影響分野での競争力低下は避けられない。</li>
+                                <li>米国産農産物輸入増による国内農業への影響。</li>
+                                <li>**米司法判断が関税縮小を後押しした場合、さらなる負担軽減の可能性も。**</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-md text-red-600 mb-1">失敗・膠着シナリオ</h4>
+                            <ul class="list-disc list-inside text-sm space-y-1 pl-4">
+                                <li>自動車・鉄鋼・アルミ産業に壊滅的打撃（特に鉄鋼・アルミは50%関税の場合）。</li>
+                                <li>日本のGDP全体に深刻なマイナス影響（0.2%～0.7%超押し下げ試算、関税率により変動）。</li>
+                                <li>輸入品価格上昇で消費者・関連産業コスト増。</li>
+                                <li>不確実性長期化で投資意欲減退、サプライチェーン再構築の可能性。</li>
+                                <li>**米司法判断が関税維持を容認した場合、影響はより深刻かつ長期化する恐れ。**</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="text-md font-semibold mb-2 text-center">シナリオ別 GDP影響試算</h4>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="gdpImpactChart"></canvas>
+                        </div>
+                        <p class="text-xs text-center mt-1 text-slate-600">注：失敗シナリオは関税範囲により影響が変動する。</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-700">日本の交渉担当者への政策提言</h3>
+                    <ul class="list-disc list-inside text-sm space-y-2 pl-4">
+                        <li><strong>政府一体での対応:</strong> 関係省庁間の緊密な連携、一貫したメッセージ発信。</li>
+                        <li><strong>経済合理性の強調:</strong> 関税の負の影響を具体的データで指摘。日本企業の米国内雇用・投資実績も強調。</li>
+                        <li><strong>戦略的な譲歩:</strong> 譲歩案は慎重に見極め、既存国際枠組みとの整合性考慮。国益を損なう譲歩回避。</li>
+                        <li><strong>アジェンダの拡大:</strong> 貿易問題と経済安全保障協力（重要鉱物、エネルギー等）を戦略的にリンク。</li>
+                        <li><strong>同盟国・連携国との連携:</strong> 情報共有・意見交換（ただし二国間交渉が中心）。</li>
+                        <li><strong>「ノーディール」への備え:</strong> 国内産業支援策拡充・準備。報復措置やWTO提訴も選択肢として検討。</li>
+                        <li><strong>時間軸の管理:</strong> 拙速な妥協回避も、膠着状態長期化のコスト認識。「ゆっくり急ぐ」姿勢。</li>
+                        <li>**米司法判断の動向分析と対応準備:** 裁判の進捗を注視し、判断に応じた交渉戦略の修正や法的論点の準備を行う。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-700">企業における危機管理計画</h3>
+                     <ul class="list-disc list-inside text-sm space-y-2 pl-4">
+                        <li><strong>シナリオ分析の実施:</strong> 自社への影響を定量的評価（成功シナリオと失敗シナリオ、**米司法判断の影響も加味**）。</li>
+                        <li><strong>サプライチェーンの多様化・強靭化:</strong> 代替調達ルートや生産拠点の確保加速。</li>
+                        <li><strong>生産拠点の最適化（ローカリゼーション）:</strong> 米国内/USMCA域内生産拡大・現地調達率向上検討。</li>
+                        <li><strong>コスト管理戦略:</strong> 価格転嫁、生産性向上、利益率での吸収など多角的対応。</li>
+                        <li><strong>政府・業界団体との連携:</strong> 情報収集、要望伝達、政府支援策活用。</li>
+                        <li>**法的リスクの評価:** 関税措置の変更可能性やそれに伴う契約条件の見直しなど、法的側面からのリスク評価と対策検討。</li>
+                    </ul>
+                </div>
+                <div class="mt-4 bg-fuchsia-100 border-l-4 border-fuchsia-500 text-fuchsia-700 p-4 rounded-md">
+                    <p class="font-bold">単なる関税問題を超えた影響：将来のルール形成</p>
+                    <p class="text-sm mt-1">今回の交渉は、目先の関税問題に留まらず、今後の日米経済関係のあり方、<br>さらにはデジタル貿易、経済安全保障、投資審査といった分野におけるルール形成にも影響を及ぼす可能性がある。<br>単なる関税率交渉ではなく、より広範な経済秩序のルール形成に関わる重要な局面と捉えるべきである。</p>
+                </div>
+            </div>
+        </div>
+        <!-- Full Report Section -->
+        <div id="full-report" class="content-section">
+            <div class="full-report-content bg-white p-6 rounded-lg shadow">
+                <h1>日米関税交渉の成功・失敗シナリオ分析と蓋然性評価</h1>
+                 <h2>I. エグゼクティブ・サマリー</h2>
+                 <p>本報告書は、2025年現在のトランプ政権下における日米関税交渉の現状を分析し、交渉が成功裏に妥結するシナリオと、失敗または膠着状態に陥るシナリオをそれぞれシミュレーションする。さらに、各シナリオの実現可能性に影響を与える経済的、政治的、戦略的要因を多角的に評価し、どちらの帰結に至る可能性が高いかを詳細に分析するものである。</p>
+                 <p>トランプ政権は、「相互関税」、鉄鋼・アルミニウム及び自動車・同部品に対する通商拡大法232条に基づく追加関税など、一連の関税措置を打ち出し、日本もその対象となっている。これに対し日本政府は、関税措置の見直しを求め、米国との間で閣僚級を含む交渉を開始した。</p>
+                 <p>交渉成功シナリオでは、米国側の経済的・政治的圧力の高まりや日本の戦略的な譲歩、同盟関係の重視などを背景に、少なくとも相互関税の上乗せ部分の撤廃や鉄鋼・アルミ関税に関する一定の緩和措置が実現する可能性が考えられる。しかし、米国側が最重要課題と位置付ける自動車関税については、交渉対象外とする姿勢を示しており、完全な関税撤廃に至る可能性は低い。</p>
+                 <p>一方、交渉失敗シナリオでは、米国側の強硬姿勢、特に自動車関税に関する非妥協的な態度や、日本側が受け入れ困難な要求などが要因となり、交渉が決裂または長期的な膠着状態に陥る可能性が想定される。この場合、日本には相互関税の上乗せ分を含む高率の関税が課され続け、特に自動車産業を中心に日本経済への深刻な打撃が懸念される。</p>
+                 <p>6月を通じて交渉が完全に停滞し、米国側の姿勢が硬化していることを受け、**本報告書の評価は「失敗・膠着」シナリオの蓋然性が65%と、「限定的な成功」の35%を明確に上回るという結論に至った。**7月9日の期限切れを前に緊張は高まっており、日本政府および関連企業には、最悪の事態を想定したリスク管理体制の本格的な強化が急務である。</p>
+                
+                 <h2>II. 日米関税交渉の現状（2025年）</h2>
+                 <h3>A. 背景：トランプ政権の関税枠組みと理論的根拠</h3>
+                 <p>2025年初頭、トランプ政権は米国の貿易政策において保護主義的な色彩を一層強め、日本を含む多くの貿易相手国に対して新たな関税措置を導入した。これらの措置は、米国の貿易赤字削減、国内産業保護、そして他国との交渉におけるレバレッジ確保を主な目的としている。</p>
+                 <p><strong>主要な関税措置の概要</strong></p>
+                 <ul>
+                       <li><strong>相互関税（Reciprocal Tariffs）：</strong> 全ての国からの輸入品に一律10%の関税を課す基本措置に加え、対米貿易赤字が大きい国に対して「相互的」とされる追加関税率を上乗せする二段階構造となっている。日本に対しては、基本の10%に14%が上乗せされ、合計24%の税率が発表された。ただし、交渉に応じた日本など一部の国に対しては、この上乗せ部分（14%分）の適用が当初90日間停止された。</li>
+                       <li><strong>通商拡大法232条に基づく関税（鉄鋼・アルミニウム）：</strong> 安全保障上の脅威を理由に、鉄鋼およびアルミニウム輸入品に対する追加関税が再導入または強化された。過去の政権下やトランプ政権初期に交渉された適用除外や関税割当（TRQ）協定は撤回され、鉄鋼には25%（6月4日より50%に引き上げ済み）、アルミニウムには従来の10%から引き上げられた25%（6月4日より50%に引き上げ済み）の関税が課されることとなった。対象は、アルミ缶などの派生製品にも拡大されている。</li>
+                       <li><strong>通商拡大法232条に基づく関税（自動車・同部品）：</strong> 同様に安全保障を理由として、自動車（乗用車、トラック等）および自動車部品に対しても25%の追加関税が課されることが発表され、自動車は4月3日、部品は5月3日から適用が開始された。日米間の自動車貿易は歴史的に摩擦の火種となっており、2024年には米国が日本から555億ドル相当の自動車・部品を輸入するなど、その経済的重要性は極めて高い。</li>
+                 </ul>
+                 <h3>B. 交渉のタイムラインと主要参加者</h3>
+                 <p>(内容は「交渉の経緯」タブと同様)</p>
+                 <h3>C. 主張される目的と核心的な争点</h3>
+                 <p>日米関税交渉において、両国の主張する目的と、その間に横たわる核心的な争点は以下の通りである。</p>
+                <p><strong>米国の要求・目的</strong></p>
+                <ul>
+                  <li><strong>関税措置の正当化・維持:</strong> 相互関税などを通じて貿易不均衡を是正するという自国の関税措置について、日本側の理解または受容を求めている。</li>
+                  <li><strong>市場アクセス（農産物）：</strong> 米国産農産物に対する日本市場のさらなる開放を要求している。</li>
+                  <li><strong>非関税障壁（NTBs）の撤廃:</strong> 日本の工業製品市場における構造的な障壁、特に規制や基準などを問題視し、その撤廃を求めている。</li>
+                  <li><strong>為替問題:</strong> ベッセント財務長官が日本との交渉で為替問題も議論する意向を示唆している。</li>
+                </ul>
+                <p><strong>日本の要求・目的</strong></p>
+                <ul>
+                  <li><strong>関税の撤回・適用除外:</strong> 米国による一連の関税措置について、「極めて遺憾」であるとして、その見直し、撤廃、または適用除外を強く要求している。</li>
+                  <li><strong>過去の合意の遵守:</strong> USJTAなど既存の合意において、新たな関税賦課を避けるという精神があったことを踏まえ、その遵守を暗に求めている。</li>
+                  <li><strong>貿易拡大・NTB削減（相互主義）：</strong> 米国側の要求に対し、カウンターオファーとして、相互の貿易拡大や非関税措置の是正に関する議論を提案している。</li>
+                </ul>
+                <p><strong>主要な対立点（スティッキング・ポイント）</strong></p>
+                <ul>
+                  <li><strong>自動車関税の扱い:</strong> 最大の対立点は、自動車関税の扱いである。米国側は、自動車や鉄鋼・アルミへの関税は交渉の対象外であるとの考えを示したと報じられている。これに対し、日本側は自動車関税を「絶対に受け入れられない」として強く反発しており、全ての関税措置の見直しを求めている。</li>
+                  <li><strong>交渉範囲:</strong> 交渉が全ての関税措置を対象とするのか、それとも相互関税の上乗せ部分に限定されるのかについて、日米間の見解が一致していない。</li>
+                  <li><strong>譲歩の内容:</strong> 日本側がどのような譲歩を行う用意があるのか、そしてそれが米国の要求水準を満たすのかが焦点となる。</li>
+                </ul>
+                
+                 <h2>IV. シミュレーション：交渉失敗・膠着シナリオ</h2>
+                 <p>次に、日米関税交渉が決裂、または実質的な進展なく長期化する「失敗」シナリオを考察する。</p>
+                 <h3>A. 日本にとっての「失敗」の定義</h3>
+                 <ul>
+                   <li><strong>部分的な失敗:</strong> 交渉が停滞し、相互関税の上乗せ部分（14%）に対する90日間の適用停止措置が期限切れとなり、日本は発表された全ての関税に直面する。</li>
+                   <li><strong>完全な失敗:</strong> 交渉が敵対的な雰囲気の中で決裂する。米国がさらなる報復的措置を課す、あるいは将来的な対話を拒否するなど、二国間関係が悪化する。</li>
+                   <li><strong>膠着状態（Stalemate）：</strong> 交渉が明確な決裂には至らないものの、何の解決策も見いだせないまま無期限に継続される。関税は課されたままとなり、企業は長期的な不確実性に晒される。</li>
+                 </ul>
+                 <h3>B. 失敗に至る主要因</h3>
+                 <p>交渉が失敗または膠着状態に陥る主な要因としては、以下の点が考えられる。</p>
+                 <ul>
+                       <li><strong>米国の非妥協的姿勢:</strong> トランプ政権が、自らの要求や関税水準について一切譲歩せず、特に自動車・鉄鋼関税を「交渉対象外」とする立場を堅持する。</li>
+                       <li><strong>受け入れ不可能な米国の要求:</strong> 米国が要求する譲歩が、日本にとって政治的・経済的に受け入れ不可能である。</li>
+                       <li><strong>不十分な日本の譲歩:</strong> 日本側が提示する譲歩案が、米国側から見て関税を撤回するに足る見返りとは見なされない。</li>
+                 </ul>
+                 <h3>C. 失敗への道筋（シミュレーション）</h3>
+                 <p>交渉が失敗または膠着に至る場合の、想定されるプロセスは以下の通りである。</p>
+                 <ul>
+                       <li><strong>初期の行き詰まり（2025年5月～6月）</strong>
+                           <ul>
+                               <li>集中的な協議にもかかわらず、自動車・鉄鋼関税の扱いを巡る根本的な対立が解消されない。</li>
+                           </ul>
+                       </li>
+                       <li><strong>立場の硬化（2025年夏）</strong>
+                           <ul>
+                               <li>事務レベル協議では溝が埋まらず、閣僚級会合の頻度が低下、または成果なく終了。</li>
+                           </ul>
+                       </li>
+                       <li><strong>適用停止期限切れ・交渉決裂（2025年7月以降）</strong>
+                           <ul>
+                               <li>相互関税の上乗せ部分に対する90日間の適用停止措置が期限切れ。米国は、日本からの輸入品に対し、発表済みの全ての関税の徴収を開始。</li>
+                           </ul>
+                       </li>
+                 </ul>
+                 <h3>D. 成功要因 vs 失敗要因の比較（表）</h3>
+                 <p>交渉の成功と失敗、それぞれのシナリオを推進する要因を比較検討することは、最終的な蓋然性を評価する上で不可欠である。</p>
+                 <table>
+                       <thead>
+                           <tr>
+                               <th>要因</th>
+                               <th>成功への推進力</th>
+                               <th>失敗・膠着への推進力</th>
+                           </tr>
+                       </thead>
+                       <tbody>
+                           <tr>
+                               <td>米国経済状況</td>
+                               <td>インフレ・景気後退懸念が関税緩和圧力を高める</td>
+                               <td>経済的影響は許容範囲内、または保護主義的目標が優先される</td>
+                           </tr>
+                           <tr>
+                               <td>米国政治状況</td>
+                               <td>大統領支持率低下、関税への否定的世論がディールへの動機付けに</td>
+                               <td>強硬姿勢が支持基盤にアピール。保護対象産業からのロビー活動が奏功</td>
+                           </tr>
+                           <tr>
+                               <td>日本側の譲歩</td>
+                               <td>政治的に実行可能かつ米国が評価する譲歩案（農産物、NTB等）を提示</td>
+                               <td>譲歩案が米国に不十分と見なされる。国内の反対で譲歩の余地が狭まる</td>
+                           </tr>
+                           <tr>
+                               <td>米国の交渉姿勢</td>
+                               <td>（特に相互関税部分で）柔軟性を示し、合意形成のための妥協意欲あり</td>
+                               <td>非妥協的、特に自動車・鉄鋼関税を交渉対象外とする姿勢を堅持</td>
+                           </tr>
+                           <tr>
+                               <td>自動車関税問題</td>
+                               <td>将来的な見直しや投資との連動など、妥協点を見出す</td>
+                               <td>米国は交渉対象外を堅持。日本は自動車関税緩和なしでの合意を拒否</td>
+                           </tr>
+                           <tr>
+                               <td>戦略的・地政学的要因</td>
+                               <td>同盟関係の重要性が貿易摩擦を上回る</td>
+                               <td>貿易紛争が放置され、より広範な協力関係を損なう</td>
+                           </tr>
+                           <tr>
+                               <td>交渉プロセス・タイミング</td>
+                               <td>早期の成果を求める米国の動機が妥協を促進。日本の巧みな外交。</td>
+                               <td>誤算、遅延、適用停止期限切れが関税固定化を招く。敵対的な決裂。</td>
+                           </tr>
+                       </tbody>
+                 </table>
+                
+                 <h2>V. 蓋然性分析：成功 vs 失敗</h2>
+                 <p>これまでの分析を踏まえ、日米関税交渉が成功裏に終わる可能性と、失敗または膠着状態に陥る可能性のどちらが高いかを評価する。</p>
+                 <h3>A. 確率の比較検討：推進要因の評価</h3>
+                 <p><strong>成功の可能性を高める要因</strong></p>
+                 <ul>
+                       <li><strong>米国経済への圧力:</strong> 関税によるインフレや特定産業への打撃は、政権にとって無視できない問題となり、限定的であれ関税緩和への動機となりうる。</li>
+                       <li><strong>「交渉のテコ」としての関税:</strong> 政権が関税を主たる目的ではなく、交渉を有利に進めるための手段と捉えている場合、日本側の譲歩と引き換えに関税の一部（特に相互関税の上乗せ部分）を撤回し、それを「交渉の勝利」として国内に示すインセンティブが働く。</li>
+                       <li><strong>地政学的な要請:</strong> 中国との戦略的競争などを背景とした日米同盟強化の必要性が、最終的に貿易摩擦の過度なエスカレーションを抑制する方向に作用する可能性がある。</li>
+                       <li><strong>実行可能な日本の譲歩:</strong> 日本には、特に農産物分野（CPTPP水準などを参考に）や特定の非関税障壁において、米国側の要求（相互関税上乗せ部分の撤廃要求）を満たすための、ある程度の譲歩の余地が存在する可能性がある。</li>
+                 </ul>
+                 <p><strong>失敗・膠着の可能性を高める要因</strong></p>
+                 <ul>
+                       <li><strong>米国の自動車・鉄鋼に関する強硬姿勢:</strong> 米国側が自動車・鉄鋼関税を交渉対象外とする姿勢を崩さない場合、日本の核心的利益が満たされないため、たとえ他の部分で合意が可能であっても、日本側が最終合意を拒否する可能性がある。</li>
+                       <li><strong>トランプ政権の保護主義的信念:</strong> 政権中枢に根強い保護主義への信念が、経済合理性や外交的配慮よりも優先される可能性がある。</li>
+                       <li><strong>日本の譲歩余地の限界:</strong> 日本国内の政治的事情、特に農産物分野における強い抵抗感が、米国を満足させるだけの譲歩案提示を困難にする可能性がある。</li>
+                 </ul>
+                 <h3>B. 外部変数の影響</h3>
+                 <p>交渉の行方は、外部変数によっても左右される。特に、米国経済の動向、米国の政治と世論、地政学的環境、他の米国通商交渉の展開、IPEF/CPTPPの動向などが挙げられる。</p>
+                
+                 <h2>VI. 戦略的インプリケーションと日本への提言</h2>
+                 <p>日米関税交渉の結果は、日本の経済および外交政策に重大な影響を及ぼす。成功、失敗いずれのシナリオにおいても、戦略的な対応が不可欠となる。</p>
+                 <h3>A. 各シナリオがもたらす経済的影響</h3>
+                 <p>成功（限定的）シナリオでは関税負担が一部軽減されるが、自動車・鉄鋼産業は引き続きコスト負担を強いられる。失敗・膠着シナリオでは、これらの産業に壊滅的な打撃を与え、日本のGDP全体にも深刻なマイナス影響が及ぶ。</p>
+                 <h3>B. 日本の交渉担当者への政策提言</h3>
+                 <p>政府一体での対応、経済合理性の強調、戦略的な譲歩、アジェンダの拡大、同盟国との連携、「ノーディール」への備え、時間軸の管理が求められる。</p>
+                 <h3>C. 企業における危機管理計画</h3>
+                 <p>企業は、シナリオ分析の実施、サプライチェーンの多様化、生産拠点の最適化、コスト管理戦略、政府・業界団体との連携が必要である。</p>
+                
+                 <h2>VII. 結論</h2>
+                 <p>日米関税交渉は、トランプ政権による一方的かつ広範な関税措置という、極めて困難な状況下で進められている。本報告書の分析によれば、相互関税の上乗せ部分の撤廃や鉄鋼・アルミ関税に関する一定の緩和を含む「限定的な成功」シナリオが、交渉決裂や長期的な膠着状態よりも、現時点ではわずかに可能性が高いと評価される。</p>
+                 <p>しかし、この結論には多くの不確実性が伴う。特に、米国側が日本の核心的利益である自動車関税を交渉対象外とする姿勢を崩さず、鉄鋼・アルミ関税について強硬な態度を維持する限り、日本にとって真に満足のいく解決は困難であり、交渉が失敗または膠着するリスクは依然として高い。</p>
+                 <p>交渉の帰結がどちらに転ぶにせよ、日本経済、とりわけ自動車産業をはじめとする輸出産業への影響は甚大である。日本政府には、引き続き同盟国としての関係を維持しつつも、国益を最大限守るための粘り強く、かつ戦略的な外交交渉が求められる。経済合理性に基づく説得、経済安全保障など広範な分野での協力の活用、そして慎重に計算された譲歩案の提示が鍵となる。同時に、最悪の事態も想定した国内対策と、産業界における危機管理体制の強化が不可欠である。</p>
+                 <p>今回の交渉は、単なる二国間の貿易摩擦に留まらず、今後の日米経済関係の方向性、さらには変動する国際経済秩序における日本の立ち位置をも左右する重要な試金石となるであろう。</p>
+                 <hr class="my-6">
+                
+                 <h2>VIII. 分野別影響分析 (追加情報)</h2>
+                 <h3>A. はじめに</h3>
+                 <p>日米関税交渉の影響は、日本経済全体に及ぶものの、その度合いは産業分野によって大きく異なる。本章では、特に影響が甚大であると予想される主要3分野、すなわち(1)自動車産業、(2)鉄鋼・アルミニウム産業、そして(3)農業分野に焦点を当て、それぞれが直面する固有のリスクと戦略的立ち位置を分析する。</p>
+                 <h3>B. 自動車産業：核心的利益の攻防</h3>
+                 <p>自動車産業は日本の輸出の柱であり、対米貿易黒字の主要因でもあるため、本交渉における最大の焦点となっている。米国による25%の追加関税は、完成車メーカーのみならず、部品を供給する数多のサプライヤーにも連鎖的な打撃を与える。関税によるコスト増は、価格競争力の低下に直結し、米国市場でのシェアを失うリスクを孕む。これに対し、日系メーカーは米国内での現地生産を拡大してきたが、エンジンやトランスミッションなどの基幹部品は依然として日本からの輸入に依存しているケースが多く、関税の影響を完全に回避することは困難である。サプライチェーンの再構築やさらなる現地化には、巨額の追加投資と時間が必要であり、短期的な解決策とはなり得ない。したがって、自動車関税の回避・撤廃は、日本にとって交渉の最重要課題であり、安易な譲歩は許されない核心的利益と位置づけられる。</p>
+                 <h3>C. 鉄鋼・アルミニウム産業：高関税の壁</h3>
+                 <p>すでに25%から50%へと引き上げられた鉄鋼・アルミニウム関税は、多くの汎用品にとって、事実上の市場からの締め出し（シャットアウト）に等しい。日本から輸出される鉄鋼・アルミ製品は、自動車用鋼板や特殊鋼、高品質なアルミ板など、高い技術力を要する高付加価値製品が多いものの、これほどの高関税下では採算の確保が極めて困難となる。交渉における日本側の目標は、過去に存在したような国別の適用除外、あるいは少なくとも実質的なビジネス継続を可能にする規模の関税割当（TRQ）を再獲得することにある。しかし、鉄鋼・アルミ産業は米国内の保護主義的ロビー活動が最も強い分野の一つであり、政権も国内労働者へのアピールとして関税を維持する動機が強いため、交渉は極めて厳しいものとならざるを得ない。</p>
+                 <h3>D. 農業分野：戦略的譲歩の可能性</h3>
+                 <p>農業分野は、これまでの日米貿易交渉の歴史において、常に米国からの市場開放要求の対象となってきた。今回も、米国側が自動車や鉄鋼で譲歩しない代わりに、農産物分野での大幅な譲歩を日本に迫る可能性が高い。具体的には、牛肉、豚肉、乳製品、小麦、コメなど、米国が強い関心を持つ品目について、既存の関税割当（TRQ）の大幅な拡大や、CPTPP（環太平洋パートナーシップ協定）で合意した水準を超える関税削減を要求されることが予想される。日本政府にとっては、自動車など他産業への打撃を緩和するための戦略的な交渉カード（譲歩の材料）となりうる一方で、国内の農業生産者からの強い反発は必至であり、その政治的コストは大きい。どの品目で、どの程度の譲歩を行うのか、その見極めが極めて重要となる。</p>
+
+            </div>
+        </div>
+        <!-- Audio Summary Section -->
+        <div id="audio-summary" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">音声概要</h2>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-sky-700">日米関税交渉の動向分析mp3</h3>
+                    <audio controls class="w-full">
+                        <source src="https://www.rifj.jp/wp/wp-content/uploads/2025/05/日米関税交渉の動向分析.mp3" type="audio/mpeg">
+                        お使いのブラウザは音声要素をサポートしていません
+                    </audio>
+                    <p class="text-xs mt-2 text-slate-500">提供されたURLの音声ファイルを再生します</p>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold mb-4 text-sky-700">日米関税交渉合意解説ポッドキャスト (2025/07/23)</h3>
+                    <audio controls class="w-full">
+                        <source src="https://www.rifj.jp/wp/wp-content/uploads/2025/07/日米関税交渉合意解説ポッドキャスト_2025_07_23.m4a" type="audio/mp4">
+                        お使いのブラウザは音声要素をサポートしていません
+                    </audio>
+                    <p class="text-xs mt-2 text-slate-500">提供されたURLの音声ファイルを再生します</p>
+                </div>
+            </div>
+        </div>
+        <!-- LP Infographic Section -->
+        <div id="lp-infographic" class="content-section">
+            <h2 class="text-3xl font-bold mb-6 text-center lp-section-title">日米関税交渉 インフォグラフィック</h2>
+            <div class="container mx-auto px-2 md:px-4">
+                <!-- Summary Card -->
+                <section id="lp-summary" class="mb-10">
+                    <div class="lp-card">
+                        <h3 class="text-2xl font-semibold mb-3 text-[#118AB2]">交渉の現状：停滞と対立の深化</h3>
+                        <p class="mb-3 text-sm">2025年6月、日米関税交渉は閣僚級会合が不調に終わり、事実上の停滞状態に。<br>米国による「相互関税」、鉄鋼・アルミ、自動車への追加関税に対し、日本は全面的見直しを要求。<br>**米国の強硬姿勢により、対立はさらに深刻化。**</p>
+                        <div class="grid md:grid-cols-2 gap-4 mt-4">
+                            <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                                <h4 class="text-lg font-semibold mb-1 text-green-700">成功シナリオの展望</h4>
+                                <p class="text-xs">相互関税上乗せ撤廃など「限定的成功」の道は残るが、可能性は低下。<br>日本の大幅な譲歩が前提となる。</p>
+                            </div>
+                            <div class="bg-red-50 p-3 rounded-lg border border-red-200">
+                                <h4 class="text-lg font-semibold mb-1 text-red-700">失敗シナリオの懸念</h4>
+                                <p class="text-xs">米国の強硬姿勢、特に自動車・鉄鋼関税で交渉が決裂・膠着するリスクが非常に高い。<br>日本経済への打撃は甚大。</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Tariffs Card -->
+                <section id="lp-current-tariffs" class="mb-10">
+                    <div class="lp-card">
+                        <h3 class="text-2xl font-semibold mb-4 lp-section-title">主要関税の現状 (2025年)</h3>
+                        <p class="mb-4 text-sm">米国は貿易赤字削減等を理由に、日本に対し複数の関税を導入している。<br>日本経済への影響は甚大である。</p>
+                        <div class="grid md:grid-cols-3 gap-3 mb-6 text-center">
+                            <div>
+                                <h4 class="text-md font-semibold text-[#118AB2]">相互関税</h4>
+                                <p class="lp-stat-number text-2xl">24<span class="text-lg">%</span></p>
+                                <p class="lp-sub-stat text-xs">(基本10% + 上乗せ14%)</p>
+                            </div>
+                            <div>
+                                <h4 class="text-md font-semibold text-[#118AB2]">鉄鋼・アルミ</h4>
+                                <p class="lp-stat-number text-2xl">50<span class="text-lg">%</span></p>
+                                <p class="lp-sub-stat text-xs">(6月4日より引き上げ済み)</p>
+                            </div>
+                            <div>
+                                <h4 class="text-md font-semibold text-[#118AB2]">自動車・部品</h4>
+                                <p class="lp-stat-number text-2xl">25<span class="text-lg">%</span></p>
+                                <p class="lp-sub-stat text-xs">(232条)</p>
+                            </div>
+                        </div>
+                        <div class="chart-container-infographic">
+                            <canvas id="currentTariffsChartInfographic"></canvas>
+                        </div>
+                        <p class="text-xs text-center mt-3 text-slate-500">これらの関税は複雑に絡み合い、交渉状況や米国内司法判断により変動しうる。</p>
+                    </div>
+                </section>
+                <!-- NEW INFOGRAPHIC CARD: Sector Impact -->
+                <section id="lp-sector-impact" class="mb-10">
+                     <div class="lp-card">
+                         <h3 class="text-2xl font-semibold mb-4 lp-section-title">分野別 脆弱性分析</h3>
+                         <div class="grid md:grid-cols-2 gap-4 items-center">
+                             <div>
+                                <p class="mb-3 text-sm">関税交渉は各分野に異なる影響を及ぼす。自動車、鉄鋼は直接的な打撃を受け、農業は戦略的譲歩の対象となる可能性がある。</p>
+                                <ul class="text-xs space-y-2">
+                                     <li><strong class="text-red-500">自動車:</strong> サプライチェーン全体に打撃。最大の争点。</li>
+                                     <li><strong class="text-orange-500">鉄鋼・アルミ:</strong> 50%関税で市場から締め出しの危機。</li>
+                                     <li><strong class="text-green-500">農業:</strong> 他分野を守るための譲歩を迫られる可能性。</li>
+                                </ul>
+                             </div>
+                             <div class="chart-container-infographic" style="height: 250px;">
+                                 <canvas id="sectorImpactChartInfographic"></canvas>
+                             </div>
+                         </div>
+                    </div>
+                </section>
+                <!-- Other Infographic Cards... -->
+                 <section id="lp-scenarios" class="mb-10">
+                     <div class="lp-card">
+                         <h3 class="text-2xl font-semibold mb-4 lp-section-title">交渉シナリオ：成功と失敗の道筋</h3>
+                         <div class="grid md:grid-cols-2 gap-6">
+                             <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+                                 <h4 class="text-lg font-semibold mb-2 text-green-700">成功シナリオ</h4>
+                                 <p class="text-xs mb-1 font-medium">定義: 相互関税上乗せ撤廃、鉄鋼アルミ緩和、自動車関税の将来的な道筋獲得。</p>
+                                 <div class="lp-timeline text-xs mt-2">
+                                     <div class="lp-timeline-item"><div class="lp-timeline-item-content"><strong>G7後(夏):</strong> 実務者協議で詰めの交渉</div></div>
+                                     <div class="lp-timeline-item"><div class="lp-timeline-item-content"><strong>最終(秋):</strong> 限定的合意、自動車は曖昧決着の可能性。</div></div>
+                                 </div>
+                             </div>
+                             <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
+                                 <h4 class="text-lg font-semibold mb-2 text-red-700">失敗・膠着シナリオ</h4>
+                                 <p class="text-xs mb-1 font-medium">定義: 全発表関税直面、交渉決裂または無期限膠着。</p>
+                                  <div class="lp-timeline text-xs mt-2">
+                                     <div class="lp-timeline-item"><div class="lp-timeline-item-content"><strong>対立激化(6月~):</strong> WTO提訴準備で交渉停滞</div></div>
+                                     <div class="lp-timeline-item"><div class="lp-timeline-item-content"><strong>期限切れ(7月~):</strong> 全関税発動、交渉決裂/膠着。</div></div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                 </section>
+                 <section id="lp-probability" class="mb-10">
+                     <div class="lp-card">
+                         <h3 class="text-2xl font-semibold mb-4 lp-section-title">蓋然性分析：どちらの可能性が高いか</h3>
+                         <div class="grid md:grid-cols-2 gap-6 items-center">
+                             <div>
+                                 <p class="mb-3 text-sm">最新の交渉停滞を受け、「失敗・膠着」の可能性が高まっている。<br>自動車問題と米国の強硬姿勢が最大の不確実要素。</p>
+                                 <ul class="text-xs space-y-1">
+                                     <li><strong class="text-green-600">成功要因:</strong> 米経済圧力、地政学、日本の大幅譲歩。</li>
+                                     <li><strong class="text-red-600">失敗要因:</strong> 米の強硬姿勢(自動車・鉄鋼)、保護主義、交渉停滞。</li>
+                                 </ul>
+                             </div>
+                             <div class="chart-container-infographic" style="height: 220px; max-width: 220px;">
+                                 <canvas id="probabilityChartInfographic"></canvas>
+                             </div>
+                         </div>
+                    </div>
+                 </section>
+
+                 <section id="lp-implications" class="mb-10">
+                     <div class="lp-card">
+                         <h3 class="text-2xl font-semibold mb-4 lp-section-title">影響と提言</h3>
+                         <div class="mb-6">
+                             <h4 class="text-lg font-semibold mb-2 text-center">シナリオ別 GDP影響試算</h4>
+                             <div class="chart-container-infographic" style="height:280px;">
+                                 <canvas id="gdpImpactChartInfographic"></canvas>
+                             </div>
+                             <p class="text-xs text-center mt-1 text-slate-500">失敗・膠着シナリオではGDPに深刻なマイナス影響。</p>
+                         </div>
+                         <div class="grid md:grid-cols-2 gap-6 text-xs">
+                             <div>
+                                 <h4 class="text-md font-semibold mb-1 lp-accent-text">日本政府への提言</h4>
+                                 <ul class="lp-icon-list space-y-1">
+                                     <li>政府一体での対応、一貫したメッセージ。</li>
+                                     <li>経済合理性の強調、具体的データ提示。</li>
+                                     <li>戦略的譲歩（国益を損なわぬ範囲）。</li>
+                                     <li>経済安保協力とのリンク。</li>
+                                     <li>「ノーディール」への備え、**司法判断の活用**。</li>
+                                 </ul>
+                             </div>
+                             <div>
+                                 <h4 class="text-md font-semibold mb-1 lp-accent-text">企業への提言</h4>
+                                 <ul class="list-disc list-inside space-y-1">
+                                     <li>シナリオ別影響の定量的評価、**司法判断影響も**。</li>
+                                     <li>サプライチェーン多様化・強靭化。</li>
+                                     <li>生産拠点の最適化検討。</li>
+                                     <li>コスト管理戦略の準備。</li>
+                                     <li>政府・業界団体との連携。</li>
+                                 </ul>
+                             </div>
+                         </div>
+                    </div>
+                 </section>
+
+                 <section id="lp-conclusion" class="mb-4">
+                      <div class="lp-card bg-[#073B4C] text-white p-6 rounded-lg">
+                         <h3 class="text-2xl font-bold mb-3 text-[#FFD166]">結論：予断を許さぬ重要局面</h3>
+                         <p class="text-sm text-slate-200 mb-2">日米関税交渉は、「失敗または膠着」の可能性が現実味を帯びている。<br>自動車関税問題と米国の強硬姿勢が最大の障壁である。<br>日本政府には戦略的交渉が、企業には危機管理体制の強化が求められる。<br>この交渉は今後の日米経済関係、国際経済秩序における日本の立ち位置を左右する試金石となるであろう。</p>
+                    </div>
+                 </section>
+            </div>
+        </div>
+        <!-- AI Analysis Section -->
+        <div id="ai-analysis" class="content-section">
+            <h2 class="text-2xl font-bold mb-6 text-blue-600">AIによる関税交渉分析</h2>
+            <div class="bg-white p-6 rounded-lg shadow space-y-4">
+                <div>
+                    <label for="apiKeyInput" class="block text-sm font-medium text-slate-700 mb-1">Google AI Studio APIキー</label>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                        <input type="password" id="apiKeyInput" class="flex-grow p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="APIキーを入力してください">
+                        <div class="flex space-x-2 mt-2 sm:mt-0">
+                             <button id="saveApiKey" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">保存</button>
+                             <button id="runAnalysis" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">初回分析を実行</button>
+                        </div>
+                    </div>
+                     <p id="apiKeyStatus" class="text-xs text-green-600 mt-1 ml-1 hidden">APIキーが保存されました。</p>
+                </div>
+                
+                <div id="ai-chat-container" class="mt-4 p-4 border border-slate-200 rounded-md bg-slate-50 min-h-[200px] space-y-4">
+                     <p id="ai-placeholder" class="text-slate-500">APIキーを設定し、「初回分析を実行」ボタンを押してください。このレポートの全データを基に、AIが今後の交渉の展望を分析します。</p>
+                </div>
+                
+                <div id="ai-loading" class="hidden justify-center items-center py-4">
+                    <div class="spinner"></div>
+                    <p class="ml-4 text-slate-600">AIが分析中です。しばらくお待ちください...</p>
+                </div>
+
+                <div id="follow-up-container" class="mt-4 pt-4 border-t border-slate-200">
+                     <label for="followUpInput" class="block text-sm font-medium text-slate-700 mb-1">追加で質問する</label>
+                     <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                         <input type="text" id="followUpInput" class="flex-grow p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="分析結果についてさらに質問...">
+                         <button id="askFollowUp" class="mt-2 sm:mt-0 w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">再質問</button>
+                     </div>
+                </div>
+            </div>
+             <div class="mt-6 bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm">
+                <h4 class="font-bold text-blue-800 mb-2">Google AI Studioの無料APIキーを取得する方法</h4>
+                <ol class="list-decimal list-inside space-y-1 text-blue-700">
+                    <li><a href="https://aistudio.google.com/" target="_blank" class="underline hover:text-blue-900">Google AI Studio</a>にGoogleアカウントでログインします。</li>
+                    <li>左側のメニューから「APIキーを取得」を選択します。</li>
+                    <li>「新しいAPIキーを作成」ボタンをクリックしてキーを生成します。</li>
+                    <li>生成されたAPIキーをコピーし、上の入力欄に貼り付けて「保存」ボタンを押してください。</li>
+                </ol>
+                <p class="text-xs mt-2 text-blue-600">※APIの利用は、Googleの利用規約と無料利用枠の範囲に従います。</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-8 text-sm text-slate-600">
+        <p>&copy; 2025 日米関税交渉分析レポート (一般社団法人日本みらい研2025年5月23日作成、2025年7月23日更新)</p>
+        <p class="mt-1">本内容は提供されたレポートに基づき作成されたものであり、実際の交渉結果を保証するものではありません。</p>
+    </footer>
+
+    <!-- Modal for External Variables -->
+    <div id="externalVariableModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modalTitle" class="modal-title"></h3>
+            <div id="modalBody" class="modal-body">
+                <p></p>
+            </div>
+            <button id="modalCloseButton" class="modal-close-button">閉じる</button>
+        </div>
+    </div>
+
+<script>
+    // --- SETUP & NAVIGATION ---
+    const navButtons = document.querySelectorAll('.nav-button');
+    const contentSections = document.querySelectorAll('.content-section');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    // Function to set the active section
+    function setActiveSection(targetId) {
+        contentSections.forEach(section => {
+            section.classList.toggle('active', section.id === targetId);
+        });
+        navButtons.forEach(button => {
+            button.classList.toggle('active', button.dataset.target === targetId);
+        });
+        // Hide mobile menu after selection
+        if (mobileMenu.classList.contains('block')) {
+            mobileMenu.classList.remove('block');
+            mobileMenu.classList.add('hidden');
+        }
+        // Scroll to the top of the content area on section change
+        const mainContentArea = document.querySelector('main.container');
+        if (mainContentArea) {
+            mainContentArea.scrollTop = 0; 
+            document.documentElement.scrollTop = mainContentArea.offsetTop; 
+        }
+    }
+
+    // Event listeners for all navigation buttons
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            setActiveSection(button.dataset.target);
+        });
+    });
+
+    // Mobile menu toggle
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        mobileMenu.classList.toggle('block');
+    });
+    
+    // Set initial active section
+    setActiveSection('overview');
+
+    // --- SCENARIOS TAB ---
+    const successScenarioTab = document.getElementById('successScenarioTab');
+    const failureScenarioTab = document.getElementById('failureScenarioTab');
+    const successScenarioContent = document.getElementById('successScenarioContent');
+    const failureScenarioContent = document.getElementById('failureScenarioContent');
+
+    if (successScenarioTab) {
+        successScenarioTab.addEventListener('click', () => {
+            successScenarioTab.classList.add('active');
+            failureScenarioTab.classList.remove('active');
+            successScenarioContent.classList.remove('hidden');
+            failureScenarioContent.classList.add('hidden');
+        });
+    }
+    if (failureScenarioTab) {
+        failureScenarioTab.addEventListener('click', () => {
+            failureScenarioTab.classList.add('active');
+            successScenarioTab.classList.remove('active');
+            failureScenarioContent.classList.remove('hidden');
+            successScenarioContent.classList.add('hidden');
+        });
+    }
+    
+    // --- MODAL ---
+    const modalOverlay = document.getElementById('externalVariableModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody').querySelector('p');
+    const modalCloseButton = document.getElementById('modalCloseButton');
+    const externalVariablesListItems = document.querySelectorAll('#externalVariablesList li span');
+
+    externalVariablesListItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const title = item.parentElement.dataset.modalTitle;
+            const bodyText = item.parentElement.dataset.modalBody;
+            modalTitle.textContent = title;
+            modalBody.textContent = bodyText;
+            modalOverlay.classList.add('active');
+        });
+    });
+
+    if(modalCloseButton) {
+        modalCloseButton.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+    }
+
+    if(modalOverlay) {
+        modalOverlay.addEventListener('click', (event) => {
+            if (event.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
+            }
+        });
+    }
+
+
+    // --- AI ANALYSIS ---
+    let userApiKey = "";
+    let chatHistory = [];
+    const saveApiKeyButton = document.getElementById('saveApiKey');
+    const runAnalysisButton = document.getElementById('runAnalysis');
+    const askFollowUpButton = document.getElementById('askFollowUp');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const aiChatContainer = document.getElementById('ai-chat-container');
+    const aiLoadingDiv = document.getElementById('ai-loading');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    const followUpInput = document.getElementById('followUpInput');
+    const aiPlaceholder = document.getElementById('ai-placeholder');
+
+    if (saveApiKeyButton) {
+        saveApiKeyButton.addEventListener('click', () => {
+            userApiKey = apiKeyInput.value;
+            if(userApiKey) {
+                apiKeyStatus.classList.remove('hidden');
+                setTimeout(() => {
+                    apiKeyStatus.classList.add('hidden');
+                }, 3000);
+            }
+        });
+    }
+
+    async function callGenerativeAI(prompt) {
+        if (!userApiKey) {
+            aiChatContainer.innerHTML += '<div class="ai-message text-red-600">APIキーが設定されていません。キーを保存してから分析を実行してください。</div>';
+            return;
+        }
+
+        aiLoadingDiv.style.display = 'flex';
+        
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        
+        try {
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userApiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || 'APIリクエストに失敗しました。');
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                const aiResponse = result.candidates[0].content.parts[0].text;
+                chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+                appendMessage(aiResponse, 'ai');
+            } else {
+                throw new Error('AIからの有効な応答がありませんでした。');
+            }
+        } catch (error) {
+            appendMessage(`分析中にエラーが発生しました：${error.message}`, 'ai', true);
+        } finally {
+            aiLoadingDiv.style.display = 'none';
+            aiChatContainer.scrollTop = aiChatContainer.scrollHeight;
+        }
+    }
+
+    function appendMessage(text, sender, isError = false) {
+        const messageDiv = document.createElement('div');
+        if (sender === 'user') {
+            messageDiv.className = 'user-message';
+            messageDiv.innerHTML = `<p class="font-bold">あなた:</p><p>${text}</p>`;
+        } else {
+            messageDiv.className = 'ai-message';
+            if(isError) {
+                 messageDiv.innerHTML = `<p class="font-bold text-red-600">AIエラー:</p><p class="text-red-600">${text}</p>`;
+            } else {
+                 messageDiv.innerHTML = `<p class="font-bold">AI分析:</p><p>${text}</p>`;
+            }
+        }
+        aiChatContainer.appendChild(messageDiv);
+    }
+
+    if (runAnalysisButton) {
+        runAnalysisButton.addEventListener('click', () => {
+            aiPlaceholder.style.display = 'none';
+            aiChatContainer.innerHTML = ''; // Clear previous results
+            chatHistory = []; // Reset history for new analysis
+            
+            let reportData = "";
+            document.querySelectorAll('.content-section').forEach(section => {
+                 if(section.id !== 'ai-analysis') {
+                    reportData += section.innerText + "\n\n---\n\n";
+                 }
+            });
+            const initialPrompt = `以下の日米関税交渉に関するレポート全文を基に、プロの経済アナリストとして、交渉の現状と今後の見通しについて詳細な分析を行ってください。特に、交渉が妥結する可能性、決裂する可能性、それぞれの要因、そして日本経済に与える短期・中期的な影響について、専門的かつ客観的な視点から論じてください。文体は「である」調で記述すること。\n\n---レポートデータ---\n${reportData}`;
+            callGenerativeAI(initialPrompt);
+        });
+    }
+
+    if (askFollowUpButton) {
+        askFollowUpButton.addEventListener('click', () => {
+            const question = followUpInput.value.trim();
+            if (question) {
+                appendMessage(question, 'user');
+                callGenerativeAI(question);
+                followUpInput.value = '';
+            }
+        });
+    }
+    
+    if (followUpInput) {
+        followUpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askFollowUpButton.click();
+            }
+        });
+    }
+
+
+    // --- CHART.JS CONFIGURATION & CREATION ---
+
+    // Global Chart.js defaults for consistent styling
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0,0,0,0.8)';
+    Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
+    Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+    Chart.defaults.plugins.legend.labels.boxWidth = 15;
+    Chart.defaults.plugins.legend.labels.padding = 15;
+    
+    // Helper function to wrap long labels for better display in charts
+    function processLabelsForChart(labels, maxLength = 16) {
+        return labels.map(label => {
+            if (typeof label === 'string' && label.length > maxLength) {
+                const words = label.split(' ');
+                let currentLine = '';
+                const lines = [];
+                for (const word of words) {
+                    if ((currentLine + word).length > maxLength && currentLine.length > 0) {
+                        lines.push(currentLine.trim());
+                        currentLine = word + ' ';
+                    } else {
+                        currentLine += word + ' ';
+                    }
+                }
+                lines.push(currentLine.trim());
+                return lines;
+            }
+            return label;
+        });
+    }
+    
+    // Common chart options for the main SPA sections
+    const commonChartOptionsSPA = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: '#374151' } },
+            tooltip: {
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        if (Array.isArray(label)) { return label.join(' '); }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: { x: { ticks: { color: '#374151' } }, y: { ticks: { color: '#374151' } } }
+    };
+
+    // Chart 1: Current Tariffs (Bar Chart)
+    const tariffsCtx = document.getElementById('tariffsChart');
+    if (tariffsCtx) {
+        new Chart(tariffsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['相互関税(日)', '鉄鋼', 'アルミニウム', '自動車・部品'],
+                datasets: [{
+                    label: '関税率 (%)',
+                    data: [10, 50, 50, 15], // Updated reciprocal and auto tariff
+                    backgroundColor: ['rgba(22, 163, 74, 0.7)','rgba(220, 38, 38, 0.7)','rgba(220, 38, 38, 0.7)','rgba(249, 115, 22, 0.7)'],
+                    borderColor: ['rgba(22, 163, 74, 1)','rgba(220, 38, 38, 1)','rgba(220, 38, 38, 1)','rgba(249, 115, 22, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: { ...commonChartOptionsSPA, plugins: { ...commonChartOptionsSPA.plugins, legend: { display: false }, title: { display: true, text: '主要な対日関税率（2025年7月23日合意後）', font: {size: 16}, color: '#1e40af' } } }
+        });
+    }
+
+    // Chart 2: Success vs Failure Factors (Horizontal Bar Chart)
+    const factorsCtx = document.getElementById('factorsChart');
+    if (factorsCtx) {
+        new Chart(factorsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['米国経済状況', '米国政治状況', '日本の譲歩', '米国の交渉姿勢', '自動車関税問題', '戦略的要因', '米国内司法判断'],
+                datasets: [
+                    { label: '成功への推進力', data: [6, 5, 7, 2, 2, 5, 5], backgroundColor: 'rgba(20, 184, 166, 0.7)', borderColor: 'rgba(20, 184, 166, 1)', borderWidth: 1 },
+                    { label: '失敗・膠着への推進力', data: [5, 7, 6, 10, 10, 4, 4], backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: 'rgba(239, 68, 68, 1)', borderWidth: 1 }
+                ]
+            },
+            options: { ...commonChartOptionsSPA, indexAxis: 'y', scales: { ...commonChartOptionsSPA.scales, x: { ...commonChartOptionsSPA.scales.x, title: {display: true, text: '影響度（概念的スコア）', color: '#1e40af'} } }, plugins: { ...commonChartOptionsSPA.plugins, title: { display: true, text: '交渉結果を左右する要因の比較', font: {size: 16}, color: '#1e40af' } } }
+        });
+    }
+    
+    // Chart 3: Probability (Doughnut Chart)
+    const probabilityCtx = document.getElementById('probabilityChart');
+    if (probabilityCtx) {
+        new Chart(probabilityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['失敗または膠着状態', '限定的な成功'],
+                datasets: [{
+                    label: '可能性 (%)', data: [75, 25], 
+                    backgroundColor: ['rgba(239, 68, 68, 0.8)','rgba(20, 184, 166, 0.8)'],
+                    borderColor: ['rgba(239, 68, 68, 1)','rgba(20, 184, 166, 1)'],
+                    borderWidth: 1, hoverOffset: 4
+                }]
+            },
+            options: { ...commonChartOptionsSPA, plugins: { ...commonChartOptionsSPA.plugins, legend: { position: 'bottom', labels: {...commonChartOptionsSPA.plugins.legend.labels, padding: 20 } }, title: { display: false } } }
+        });
+    }
+
+    // Chart 4: GDP Impact (Bar Chart)
+    const gdpImpactCtx = document.getElementById('gdpImpactChart');
+    if (gdpImpactCtx) {
+        new Chart(gdpImpactCtx, {
+            type: 'bar',
+            data: {
+                labels: processLabelsForChart(['成功(限定的)シナリオ', '失敗・膠着シナリオ (影響小)', '失敗・膠着シナリオ (影響大)']),
+                datasets: [{
+                    label: 'GDP押し下げ影響 (%)', data: [0.1, 0.2, 0.7],
+                    backgroundColor: ['rgba(74, 222, 128, 0.7)','rgba(251, 146, 60, 0.7)','rgba(239, 68, 68, 0.7)'],
+                    borderColor: ['rgba(74, 222, 128, 1)','rgba(251, 146, 60, 1)','rgba(239, 68, 68, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: { ...commonChartOptionsSPA, plugins: { ...commonChartOptionsSPA.plugins, legend: { display: false }, title: { display: false } }, scales: { ...commonChartOptionsSPA.scales, y: { ...commonChartOptionsSPA.scales.y, title: {display: true, text: 'GDPへの影響 (%)', color: '#1e40af'} } } }
+        });
+    }
+    
+    // --- NEW CHART: Sector Impact (Radar Chart) ---
+    const sectorImpactCtx = document.getElementById('sectorImpactChart');
+    if (sectorImpactCtx) {
+        new Chart(sectorImpactCtx, {
+            type: 'radar',
+            data: {
+                labels: ['直接的な関税影響', 'サプライチェーンへの波及', '交渉カードとしての価値', '国内政治への影響', '譲歩圧力'],
+                datasets: [
+                    {
+                        label: '自動車',
+                        data: [9, 8, 2, 8, 2],
+                        fill: true,
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        pointBackgroundColor: 'rgb(239, 68, 68)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(239, 68, 68)'
+                    },
+                    {
+                        label: '鉄鋼・アルミ',
+                        data: [10, 5, 4, 6, 3],
+                        fill: true,
+                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                        borderColor: 'rgb(249, 115, 22)',
+                        pointBackgroundColor: 'rgb(249, 115, 22)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(249, 115, 22)'
+                    },
+                    {
+                        label: '農業',
+                        data: [3, 2, 9, 9, 9],
+                        fill: true,
+                        backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                        borderColor: 'rgb(22, 163, 74)',
+                        pointBackgroundColor: 'rgb(22, 163, 74)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(22, 163, 74)'
+                    }
+                ]
+            },
+            options: {
+                ...commonChartOptionsSPA,
+                scales: {
+                    r: {
+                        angleLines: { color: '#d1d5db' },
+                        grid: { color: '#e5e7eb' },
+                        pointLabels: {
+                            font: { size: 12 },
+                            color: '#1f2937'
+                        },
+                        ticks: {
+                            color: '#4b5563',
+                            backdropColor: 'rgba(255, 255, 255, 0.75)',
+                            stepSize: 2
+                        }
+                    }
+                },
+                plugins: {
+                     ...commonChartOptionsSPA.plugins,
+                     legend: { position: 'top' },
+                }
+            }
+        });
+    }
+
+    // --- INFOGRAPHIC CHARTS ---
+
+    // Common options for infographic charts
+    const infographicChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: '#073B4C', font: { size: 10 } }, position: 'bottom' },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.75)', titleColor: '#FFFFFF', bodyColor: '#FFFFFF',
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        if (Array.isArray(label)) { return label.join(' '); }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: { x: { ticks: { color: '#073B4C', font: {size: 10} }, grid: { color: '#e2e8f0' } }, y: { ticks: { color: '#073B4C', font: {size: 10} }, grid: { color: '#e2e8f0' } } }
+    };
+
+    // Infographic Chart 1: Current Tariffs
+    const currentTariffsCtxInfographic = document.getElementById('currentTariffsChartInfographic');
+    if (currentTariffsCtxInfographic) {
+        new Chart(currentTariffsCtxInfographic, {
+            type: 'bar',
+            data: {
+                labels: processLabelsForChart(['相互関税(日)', '鉄鋼関税', 'アルミ関税', '自動車部品関税'], 10),
+                datasets: [{
+                    label: '関税率 (%)', data: [24, 50, 50, 25],
+                    backgroundColor: ['#118AB2CC', '#FF6B6BCC', '#FF6B6BCC', '#46D9F0CC'],
+                    borderColor: ['#118AB2', '#FF6B6B', '#FF6B6B', '#46D9F0'], borderWidth: 1
+                }]
+            },
+            options: { ...infographicChartOptions, plugins: { ...infographicChartOptions.plugins, legend: { display: false }, title: { display: true, text: '主要対日関税率 (7/8現在)', color: '#073B4C', font: {size: 14} } } }
+        });
+    }
+
+    // Infographic Chart 2: Scenario Factors
+    const scenarioFactorsCtxInfographic = document.getElementById('scenarioFactorsChartInfographic');
+    if (scenarioFactorsCtxInfographic) {
+        new Chart(scenarioFactorsCtxInfographic, {
+            type: 'bar',
+            data: {
+                labels: processLabelsForChart(['米経済状況', '米政治状況', '日本の譲歩', '米交渉姿勢', '自動車問題', '戦略要因', '米司法判断'], 8),
+                datasets: [
+                    { label: '成功への力', data: [6, 5, 7, 2, 2, 5, 5], backgroundColor: '#06D6A0CC', borderColor: '#06D6A0', borderWidth: 1 },
+                    { label: '失敗への力', data: [5, 7, 6, 10, 10, 4, 4], backgroundColor: '#FF6B6BCC', borderColor: '#FF6B6B', borderWidth: 1 }
+                ]
+            },
+            options: { ...infographicChartOptions, indexAxis: 'y', scales: { ...infographicChartOptions.scales, x: { ...infographicChartOptions.scales.x, title: {display: true, text: '影響度(概念)', color: '#073B4C', font: {size:10}} } }, plugins: { ...infographicChartOptions.plugins, title: { display: false } } }
+        });
+    }
+    
+    // Infographic Chart 3: Probability
+    const probabilityCtxInfographic = document.getElementById('probabilityChartInfographic');
+    if (probabilityCtxInfographic) {
+        new Chart(probabilityCtxInfographic, {
+            type: 'doughnut',
+            data: {
+                labels: ['失敗/膠着 (75%)', '限定的成功 (25%)'],
+                datasets: [{ data: [75, 25], backgroundColor: ['#FF6B6BCC', '#06D6A0CC'], borderColor: ['#FF6B6B', '#06D6A0'], borderWidth: 1, hoverOffset: 8 }]
+            },
+            options: { ...infographicChartOptions, cutout: '60%', plugins: { ...infographicChartOptions.plugins, title: { display: false }, legend: { ...infographicChartOptions.plugins.legend, labels: { ...infographicChartOptions.plugins.legend.labels, font: {size:9}, boxWidth:10, padding:10 } } } }
+        });
+    }
+
+    // Infographic Chart 4: GDP Impact
+    const gdpImpactCtxInfographic = document.getElementById('gdpImpactChartInfographic');
+    if (gdpImpactCtxInfographic) {
+        new Chart(gdpImpactCtxInfographic, {
+            type: 'bar',
+            data: {
+                labels: processLabelsForChart(['成功(限定的)', '失敗(影響小)', '失敗(影響大)'], 10),
+                datasets: [{
+                    label: 'GDP影響(%)', data: [0.1, 0.2, 0.7],
+                    backgroundColor: ['#FFD166CC', '#FFB366CC', '#FF6B6BCC'],
+                    borderColor: ['#FFD166', '#FFB366', '#FF6B6B'], borderWidth: 1
+                }]
+            },
+            options: { ...infographicChartOptions, plugins: { ...infographicChartOptions.plugins, legend: { display: false }, title: { display: false } }, scales: { ...commonChartOptionsSPA.scales, y: { ...commonChartOptionsSPA.scales.y, title: {display: true, text: 'GDPへの影響 (%)', color: '#073B4C', font: {size:10}} } } }
+        });
+    }
+
+    // Infographic Chart 5: Sector Impact (Radar)
+    const sectorImpactCtxInfographic = document.getElementById('sectorImpactChartInfographic');
+    if(sectorImpactCtxInfographic) {
+        new Chart(sectorImpactCtxInfographic, {
+            type: 'radar',
+            data: {
+                labels: ['関税影響', 'サプライチェーン', '交渉カード価値', '国内政治影響', '譲歩圧力'],
+                datasets: [
+                    {
+                        label: '自動車',
+                        data: [9, 8, 2, 8, 2],
+                        backgroundColor: 'rgba(239, 68, 68, 0.4)',
+                        borderColor: 'rgb(239, 68, 68)',
+                    },
+                    {
+                        label: '鉄鋼・アルミ',
+                        data: [10, 5, 4, 6, 3],
+                        backgroundColor: 'rgba(249, 115, 22, 0.4)',
+                        borderColor: 'rgb(249, 115, 22)',
+                    },
+                    {
+                        label: '農業',
+                        data: [3, 2, 9, 9, 9],
+                        backgroundColor: 'rgba(22, 163, 74, 0.4)',
+                        borderColor: 'rgb(22, 163, 74)',
+                    }
+                ]
+            },
+            options: {
+                ...infographicChartOptions,
+                plugins: { ...infographicChartOptions.plugins, legend: {labels: {boxWidth: 5, font: {size: 9}}}},
+                scales: {
+                    r: {
+                        angleLines: { color: '#e2e8f0' },
+                        grid: { color: '#e2e8f0' },
+                        pointLabels: { font: { size: 9 }, color: '#073B4C' },
+                        ticks: { display: false, stepSize: 2 }
+                    }
+                }
+            }
+        })
+    }
+</script>
+</body>
+</html>
