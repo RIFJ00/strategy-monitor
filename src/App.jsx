@@ -1,13 +1,13 @@
 /**
- * 会議体ダッシュボード (機能統合・エラー完全修正版)
+ * 会議体ダッシュボード (分野順完全固定・機能統合版)
  * --------------------------------------------------
- * [主な機能]
- * ・スリープ防止 (Wake Lock API): 一括巡回中にデバイスが眠るのを防ぎます。
- * ・高精度近接解析: 「第N回」の周辺150文字を重点スキャンし、最新日を特定。
- * ・リアルタイム同期: Firestore (seisakuresearch) の変更を即座に反映。
- * ・一括既読の修復: ターゲット抽出と更新パスを絶対参照で固定。
- * ・2段階確認: 既読ボタンの誤操作防止。
- * ・エラー解消: 変数定義順序を最適化し、ReferenceErrorを完全に排除。
+ * [修正・実装内容]
+ * 1. 分野プルダウン: 登録順(createdAt順)の出現順に完全固定。表のソートに連動せず安定化。
+ * 2. 未読状態の保護: 既読にするまで、何度巡回しても赤色のまま固定。
+ * 3. スリープ防止 (Wake Lock): 一括巡回中にデバイスがスリープするのを防止。
+ * 4. リアルタイム同期: Firestore (seisakuresearch) の変更を即座に反映。
+ * 5. 一括既読修復: 絶対パス指定による Batch 更新で確実に動作。
+ * 6. エラー対策: summary, formatCheckTime 等の定義順序を最適化。
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -37,10 +37,9 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 固定 appId
 const appId = 'seisakuresearch';
 
-// Firestore パスヘルパー (Rule 1 準拠)
+// Firestore パスヘルパー
 const getMeetingsCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'meetings');
 const getMeetingDoc = (id) => doc(db, 'artifacts', appId, 'public', 'data', 'meetings', id);
 const getSystemConfigDoc = () => doc(db, 'artifacts', appId, 'public', 'data', 'config', 'system');
@@ -51,7 +50,7 @@ const MINISTRY_ORDER = [
   "文部科学省", "厚生労働省", "農林水産省", "経済産業省", "国土交通省", "環境省", "原子力規制委員会", "防衛省"
 ];
 
-// --- ユーティリティ関数 (定義順エラー防止のため外側に配置) ---
+// --- ユーティリティ関数 ---
 const normalizeText = (str) => {
   if (!str) return "";
   return str.replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/　/g, " ").replace(/\s+/g, " ").trim();
@@ -94,17 +93,18 @@ const formatCheckTime = (ts) => {
 
 // --- メインコンポーネント ---
 export default function App() {
-  // ステート定義
   const [user, setUser] = useState(null);
   const [meetings, setMeetings] = useState([]);
   const [isAutoUpdateOn, setIsAutoUpdateOn] = useState(true);
   const [loading, setLoading] = useState(true);
 
+  // フィルター用ステート
   const [statusFilter, setStatusFilter] = useState('all');
   const [fieldFilter, setFieldFilter] = useState('all');
   const [agencyFilter, setAgencyFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 操作用ステート
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [confirmingReadId, setConfirmingReadId] = useState(null); 
   const [editTarget, setEditTarget] = useState(null);
@@ -121,7 +121,7 @@ export default function App() {
 
   const wakeLockRef = useRef(null);
 
-  // [修正] summary を早期に算出 (ReferenceError 回避)
+  // 1. [最優先] 統計情報の算出 (ReferenceError 回避)
   const summary = useMemo(() => ({
     total: meetings.length,
     updated: meetings.filter(m => m.status === 'updated' && !m.isManual).length,
@@ -130,7 +130,7 @@ export default function App() {
     error: meetings.filter(m => m.status === 'error').length
   }), [meetings]);
 
-  // Firebase 認証初期化
+  // 2. Firebase 認証
   useEffect(() => {
     let isMounted = true;
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
@@ -147,7 +147,7 @@ export default function App() {
     return () => { isMounted = false; unsubscribeAuth(); };
   }, []);
 
-  // リアルタイム同期 (onSnapshot)
+  // 3. リアルタイムデータ同期 (onSnapshot)
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -187,19 +187,54 @@ export default function App() {
     return () => { unsubscribeConfig(); unsubscribeMeetings(); };
   }, [user]);
 
-  // リストのソート
+  // --- 並び替えとプルダウンのロジック ---
+
+  // [重要] 分野プルダウン: 「登録順 (createdAt順)」での出現順に固定
+  const uniqueFields = useMemo(() => {
+    // 1. 作成日時で全データを昇順ソートしたコピーを作成
+    const sortedByRegistration = [...meetings].sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (Number(a.createdAt) || 0);
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (Number(b.createdAt) || 0);
+      return timeA - timeB;
+    });
+    // 2. その並び（AI・半導体、造船、量子...）に従って分野を抽出
+    const fields = [];
+    sortedByRegistration.forEach(m => {
+      if (m.relatedField && m.relatedField !== '-' && !fields.includes(m.relatedField)) {
+        fields.push(m.relatedField);
+      }
+    });
+    return fields;
+  }, [meetings]);
+
+  // 表の表示用ソート (未読 ➡ エラー ➡ 登録順)
   const sortedBaseList = useMemo(() => {
     return [...meetings].sort((a, b) => {
       const isUnreadA = a.status === 'updated'; const isUnreadB = b.status === 'updated';
       if (isUnreadA && !isUnreadB) return -1;
       if (!isUnreadA && isUnreadB) return 1;
+      const isErrorA = a.status === 'error'; const isErrorB = b.status === 'error';
+      if (isErrorA && !isErrorB) return -1;
+      if (!isErrorA && isErrorB) return 1;
       const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (Number(a.createdAt) || 0);
       const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (Number(b.createdAt) || 0);
       return timeA - timeB;
     });
   }, [meetings]);
 
-  const filteredMeetings = useMemo(() => {
+  // 所管プルダウン: 行政機関の建制順
+  const uniqueAgencies = useMemo(() => {
+    const agencies = Array.from(new Set(meetings.map(m => m.agency).filter(a => a && a !== '-')));
+    return agencies.sort((a, b) => {
+      const idxA = MINISTRY_ORDER.indexOf(a); const idxB = MINISTRY_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1; if (idxB !== -1) return 1;
+      return a.localeCompare(b, 'ja');
+    });
+  }, [meetings]);
+
+  // フィルター適用後のリスト
+  const filteredAndSortedMeetings = useMemo(() => {
     return sortedBaseList.filter(m => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = (m.meetingName || "").toLowerCase().includes(q);
@@ -215,29 +250,11 @@ export default function App() {
     });
   }, [sortedBaseList, statusFilter, fieldFilter, agencyFilter, searchQuery]);
 
-  const uniqueFields = useMemo(() => {
-    const fields = [];
-    sortedBaseList.forEach(m => {
-      if (m.relatedField && m.relatedField !== '-' && !fields.includes(m.relatedField)) fields.push(m.relatedField);
-    });
-    return fields;
-  }, [sortedBaseList]);
-
-  const uniqueAgencies = useMemo(() => {
-    const agencies = Array.from(new Set(meetings.map(m => m.agency).filter(a => a && a !== '-')));
-    return agencies.sort((a, b) => {
-      const idxA = MINISTRY_ORDER.indexOf(a); const idxB = MINISTRY_ORDER.indexOf(b);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1; if (idxB !== -1) return 1;
-      return a.localeCompare(b, 'ja');
-    });
-  }, [meetings]);
-
-  // --- 高精度解析ロジック ---
+  // --- 解析ロジック (回次近接スキャン & 未読永続ガード) ---
   const executeCheck = async (meeting) => {
     if (!meeting.url || !user) return;
     setCheckingId(meeting.id);
-    setStatusMsg("接続中...");
+    setStatusMsg(`[${meeting.meetingName}] 接続中...`);
     
     const proxies = [
       { name: "CodeTabs", url: (u) => `https://api.codetabs.com/v1/proxy?url=${encodeURIComponent(u)}`, isJson: false },
@@ -247,7 +264,6 @@ export default function App() {
     let html = ""; let success = false;
     for (const proxy of proxies) {
       try {
-        setStatusMsg(`${proxy.name} 試行...`);
         const res = await fetch(proxy.url(meeting.url));
         if (!res.ok) throw new Error();
         html = proxy.isJson ? (await res.json()).contents : await res.text();
@@ -256,11 +272,13 @@ export default function App() {
     }
 
     if (!success) {
-      await updateDoc(getMeetingDoc(meeting.id), { status: 'error', errorMessage: "接続失敗", lastCheckedAt: serverTimestamp() });
+      // 未読(updated)なら赤を維持し、エラーメッセージのみ更新
+      const newPayload = { lastCheckedAt: serverTimestamp(), errorMessage: "接続失敗" };
+      if (meeting.status !== 'updated') newPayload.status = 'error';
+      await updateDoc(getMeetingDoc(meeting.id), newPayload);
       setCheckingId(null); return;
     }
 
-    setStatusMsg("近接解析中...");
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     const bodyText = normalizeText(tempDiv.innerText || tempDiv.textContent || "");
@@ -285,11 +303,11 @@ export default function App() {
       while ((dMatch = dateRegex.exec(focusSnippet)) !== null) {
         const ts = parseDateToTs(dMatch[0]);
         if (ts > 0) {
-          const dist = Math.abs(dMatch.index - 150); 
+          const distToRound = Math.abs(dMatch.index - 150); 
           const ctx = focusSnippet.substring(Math.max(0, dMatch.index - 60), dMatch.index + 60);
           const bonus = /開催|案内|日時|次第|資料|予定/.test(ctx) ? 100000 : 0;
           const penalty = /更新|作成|公開|最終|Last/.test(ctx) ? 80000 : 0;
-          candidates.push({ str: dMatch[0], ts, score: bonus - penalty - dist });
+          candidates.push({ str: dMatch[0], ts, score: bonus - penalty - distToRound });
         }
       }
 
@@ -307,6 +325,7 @@ export default function App() {
       const currentTs = meeting.latestDateTimestamp || 0;
       const currentRoundNum = (meeting.meetingRound || "").match(/\d+/) ? parseInt(meeting.meetingRound.match(/\d+/)[0], 10) : 0;
 
+      // 新着判定
       if (targetRound.num > currentRoundNum || (bestDate && bestDate.ts > currentTs)) {
         const finalDate = bestDate ? formatToWesternDate(bestDate.str) : formatToWesternDate(meeting.latestDateString);
         const combined = `${finalDate} (${targetRound.str})`;
@@ -317,6 +336,7 @@ export default function App() {
           status: 'updated', isManual: false, lastCheckedAt: serverTimestamp(), errorMessage: null
         });
       } else {
+        // 変化なしでも赤色(updated)は保護しつつ時刻のみ更新
         await updateDoc(getMeetingDoc(meeting.id), { lastCheckedAt: serverTimestamp(), errorMessage: null });
       }
     } else {
@@ -325,7 +345,7 @@ export default function App() {
     setCheckingId(null); setStatusMsg("");
   };
 
-  // --- 一括巡回処理 (スリープ防止対応) ---
+  // --- 操作ハンドラ ---
   const handleBulkStart = async (targets) => {
     setConfirmBatchModal(null); setIsBulkChecking(true); setIsPaused(false);
     setBulkCheckProgress({ current: 0, total: targets.length });
@@ -357,7 +377,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [isBulkChecking, isPaused, queue]);
 
-  // 全て既読にするロジック (絶対パス指定で修復)
   const handleMarkAllRead = async () => {
     if (!user || isMarkingAll) return;
     const targets = meetings.filter(m => m.status === 'updated');
@@ -380,7 +399,6 @@ export default function App() {
     }
   };
 
-  // 個別操作
   const handleReadConfirm = (e, meeting) => {
     e.stopPropagation();
     if (confirmingReadId === meeting.id) {
@@ -427,7 +445,7 @@ export default function App() {
   if (loading && meetings.length === 0) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
       <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Initializing Secure Live Sync...</p>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Initializing Secure Live Sync...</p>
     </div>
   );
 
@@ -454,9 +472,9 @@ export default function App() {
             <div className="flex items-center gap-3 bg-gray-50 px-4 py-2.5 rounded-2xl border border-gray-100 shadow-inner">
               <div className={`p-2 rounded-xl ${isAutoUpdateOn ? 'bg-green-500 text-white' : 'bg-gray-300 text-white'} transition-colors`}><Power className="w-4 h-4" /></div>
               <div className="flex flex-col">
-                <span className="text-[9px] text-gray-400 uppercase tracking-tighter mb-1 leading-none">Daily Auto Update</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={isAutoUpdateOn ? 'text-green-600' : 'text-gray-400'}>{isAutoUpdateOn ? 'ENABLED' : 'DISABLED'}</span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-tighter mb-1 leading-none font-black">Daily Auto Update</span>
+                <div className="flex items-center gap-2">
+                  <span className={isAutoUpdateOn ? 'text-green-600 text-xs font-black' : 'text-gray-400 text-xs font-black'}>{isAutoUpdateOn ? 'ENABLED' : 'DISABLED'}</span>
                   <button onClick={toggleAutoUpdate} className={`relative w-8 h-4 rounded-full transition-colors ${isAutoUpdateOn ? 'bg-green-500' : 'bg-gray-300'}`}>
                     <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${isAutoUpdateOn ? 'translate-x-4' : ''}`}></div>
                   </button>
@@ -472,7 +490,7 @@ export default function App() {
               </button>
             )}
             <button 
-              onClick={() => setConfirmBatchModal({ targets: selectedIds.size > 0 ? meetings.filter(m => selectedIds.has(m.id)) : filteredMeetings })} 
+              onClick={() => setConfirmBatchModal({ targets: selectedIds.size > 0 ? meetings.filter(m => selectedIds.has(m.id)) : filteredAndSortedMeetings })} 
               disabled={isBulkChecking || !user || meetings.length === 0}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl font-black shadow-lg transition-all active:scale-95 text-sm ${selectedIds.size > 0 ? 'bg-indigo-500 text-white animate-pulse' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'}`}
             >
@@ -528,7 +546,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table Area */}
         <div className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden min-h-[450px]">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left border-collapse">
@@ -536,10 +554,10 @@ export default function App() {
                 <tr>
                   <th className="px-4 py-6 w-10 text-center">
                     <button onClick={() => {
-                      if (selectedIds.size === filteredMeetings.length) setSelectedIds(new Set());
-                      else setSelectedIds(new Set(filteredMeetings.map(m => m.id)));
+                      if (selectedIds.size === filteredAndSortedMeetings.length) setSelectedIds(new Set());
+                      else setSelectedIds(new Set(filteredAndSortedMeetings.map(m => m.id)));
                     }} className="p-1 hover:bg-gray-200 rounded transition-colors">
-                      {selectedIds.size === filteredMeetings.length && filteredMeetings.length > 0 ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5 text-gray-300" />}
+                      {selectedIds.size === filteredAndSortedMeetings.length && filteredAndSortedMeetings.length > 0 ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5 text-gray-300" />}
                     </button>
                   </th>
                   <th className="px-6 py-6 w-60 text-left">状態 / 巡回時間</th>
@@ -549,7 +567,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 font-sans">
-                {filteredMeetings.map(m => (
+                {filteredAndSortedMeetings.map(m => (
                   <tr key={m.id} className={`group hover:bg-gray-50/10 transition-all ${selectedIds.has(m.id) ? 'bg-indigo-50/30' : ''} ${m.status === 'updated' && !m.isManual ? 'bg-red-50/10' : ''}`}>
                     <td className="px-4 py-4 align-middle text-center">
                        <button onClick={() => {
@@ -586,7 +604,7 @@ export default function App() {
                       </div>
                     </td>
                     <td className="px-6 py-4 align-middle">
-                      <div className="font-black text-gray-900 text-sm leading-tight line-clamp-1 group-hover:text-indigo-600 transition-colors">{m.meetingName}</div>
+                      <div className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1 group-hover:text-indigo-600 transition-colors">{m.meetingName}</div>
                       <div className="flex flex-wrap items-center gap-2 mt-1 opacity-70">
                         <span className="flex items-center gap-1 text-[8px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 shadow-sm"><Tag className="w-2.5 h-2.5" /> {m.relatedField || '-'}</span>
                         <span className="flex items-center gap-1 text-[8px] font-black text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200 shadow-sm"><MapPin className="w-2.5 h-2.5" /> {m.agency}</span>
@@ -615,25 +633,41 @@ export default function App() {
         </div>
       </div>
 
-      {/* 巡回パネル (浮遊式・スリープ防止対応) */}
+      {/* 巡回パネル (浮遊式コントロールセンター) */}
       {isBulkChecking && (
         <div className="fixed bottom-8 right-8 bg-white p-8 rounded-[2.5rem] shadow-2xl border-2 border-indigo-50 z-50 w-80 animate-in slide-in-from-right-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-2xl shadow-inner ${isPaused ? 'bg-orange-50' : 'bg-indigo-50'}`}><RefreshCw className={`w-6 h-6 ${isPaused ? 'text-orange-600' : 'text-indigo-600 animate-spin'}`} /></div>
+              <div className={`p-3 rounded-2xl shadow-inner ${isPaused ? 'bg-orange-50' : 'bg-indigo-50'}`}>
+                <RefreshCw className={`w-6 h-6 ${isPaused ? 'text-orange-600' : 'text-indigo-600 animate-spin'}`} />
+              </div>
               <h3 className="font-black text-gray-900 leading-none text-sm">{isPaused ? '一時停止中' : '巡回中...'}</h3>
             </div>
             <div className="flex gap-1.5">
               {isPaused ? (
-                <><button onClick={() => setIsPaused(false)} className="p-2.5 bg-green-50 text-green-600 rounded-xl active:scale-90 border border-green-100 shadow-sm"><Play className="w-4 h-4 fill-current" /></button><button onClick={() => handleBulkStop()} className="p-2.5 bg-red-50 text-red-600 rounded-xl active:scale-90 border border-red-100 shadow-sm"><RotateCcw className="w-4 h-4" /></button></>
+                <>
+                  <button onClick={() => setIsPaused(false)} className="p-2.5 bg-green-50 text-green-600 rounded-xl active:scale-90 border border-green-100 shadow-sm"><Play className="w-4 h-4 fill-current" /></button>
+                  <button onClick={() => handleBulkStop()} className="p-2.5 bg-red-50 text-red-600 rounded-xl active:scale-90 border border-red-100 shadow-sm"><RotateCcw className="w-4 h-4" /></button>
+                </>
               ) : (
                 <button onClick={() => setIsPaused(true)} className="p-2.5 bg-orange-50 text-orange-600 rounded-xl active:scale-90 border border-orange-100 shadow-sm"><StopCircle className="w-5 h-5 fill-current" /></button>
               )}
             </div>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-3 mb-4 overflow-hidden shadow-inner"><div className={`h-full transition-all duration-700 ${isPaused ? 'bg-orange-400' : 'bg-gradient-to-r from-indigo-500 to-indigo-700'}`} style={{ width: `${(bulkCheckProgress.current / bulkCheckProgress.total) * 100}%` }}></div></div>
-          <div className="text-xl font-black text-gray-900 leading-none">{bulkCheckProgress.current} / {bulkCheckProgress.total}</div>
-          <div className="mt-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none text-center italic">Wake Lock Active</div>
+          <div className="w-full bg-gray-100 rounded-full h-3 mb-4 overflow-hidden shadow-inner">
+            <div className={`h-full transition-all duration-700 ${isPaused ? 'bg-orange-400' : 'bg-gradient-to-r from-indigo-500 to-indigo-700'}`} style={{ width: `${(bulkCheckProgress.current / bulkCheckProgress.total) * 100}%` }}></div>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-black text-gray-900 leading-none">{bulkCheckProgress.current}</span>
+            <span className="text-xs font-bold text-gray-400">/ {bulkCheckProgress.total} 完了 ({Math.round((bulkCheckProgress.current / bulkCheckProgress.total) * 100)}%)</span>
+          </div>
+          <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
+            <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
+            <span className="text-[10px] font-bold text-gray-500 truncate uppercase tracking-widest italic">{statusMsg || '準備中...'}</span>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-[9px] font-black text-indigo-400 uppercase tracking-tighter italic text-center">
+             Wake Lock Active - Sleepless Check
+          </div>
         </div>
       )}
 
@@ -645,7 +679,7 @@ export default function App() {
             <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight px-2">巡回チェックを開始しますか？</h3>
             <p className="text-xs text-gray-500 font-bold px-4 leading-relaxed">対象: <span className="text-indigo-600 text-base">{confirmBatchModal.targets.length}</span> 件の会議体</p>
             <div className="pt-4 flex gap-3">
-              <button onClick={() => setConfirmBatchModal(null)} className="flex-1 py-4 bg-gray-100 text-gray-400 font-black rounded-2xl hover:bg-gray-200 transition-all text-xs uppercase">キャンセル</button>
+              <button onClick={() => setConfirmBatchModal(null)} className="flex-1 py-4 bg-gray-100 text-gray-400 font-black rounded-2xl hover:bg-gray-200 transition-all text-xs uppercase">戻る</button>
               <button onClick={() => handleBulkStart(confirmBatchModal.targets)} className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95 text-xs uppercase">実行する</button>
             </div>
           </div>
@@ -654,7 +688,7 @@ export default function App() {
 
       {/* 編集モーダル */}
       {editTarget && (
-        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4 font-sans">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-md p-8 border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6"><h2 className="font-black text-gray-900 flex items-center gap-2 text-base leading-none"><Edit3 className="w-5 h-5 text-blue-600" /> データの修正</h2><button onClick={() => setEditTarget(null)} className="p-2 text-gray-400 hover:bg-gray-200 rounded-full transition-all"><X className="w-5 h-5" /></button></div>
             <form onSubmit={handleSaveEdit} className="space-y-6">
