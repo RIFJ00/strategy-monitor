@@ -1,13 +1,12 @@
 /**
- * 会議体ダッシュボード (分野順完全固定・機能統合版)
+ * 会議体ダッシュボード (修正機能・回次保存完全版)
  * --------------------------------------------------
- * [修正・実装内容]
- * 1. 分野プルダウン: 登録順(createdAt順)の出現順に完全固定。表のソートに連動せず安定化。
- * 2. 未読状態の保護: 既読にするまで、何度巡回しても赤色のまま固定。
- * 3. スリープ防止 (Wake Lock): 一括巡回中にデバイスがスリープするのを防止。
- * 4. リアルタイム同期: Firestore (seisakuresearch) の変更を即座に反映。
- * 5. 一括既読修復: 絶対パス指定による Batch 更新で確実に動作。
- * 6. エラー対策: summary, formatCheckTime 等の定義順序を最適化。
+ * [主な修正内容]
+ * 1. 手動修正の改善: 日付の修正時に「第N回」も入力すれば、回数として正しく保存・表示されるよう修正。
+ * 2. 分野プルダウン: Firestoreの登録順(createdAt)に完全固定。
+ * 3. 未読状態の保護: 既読にするまで、何度巡回しても赤色のまま固定。
+ * 4. スリープ防止 (Wake Lock): 一括巡回中に画面が暗くなっても処理を継続。
+ * 5. リアルタイム同期: Firestore (seisakuresearch) の変更を即座に画面へ反映。
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -23,7 +22,7 @@ import {
   RefreshCw, Edit3, X, Database, PlayCircle, Loader2, Tag, Filter, Save, UserCheck, WifiOff, CheckSquare, Square, StopCircle, Play, RotateCcw, Eye, ArrowUpDown, EyeOff, Bookmark, MapPin, Power, Info, HelpCircle
 } from 'lucide-react';
 
-// --- Firebase 設定 (seisakuresearch00) ---
+// --- Firebase 設定 ---
 const firebaseConfig = {
   apiKey: "AIzaSyBx5e752GWfvJDZ3lEx0IcArxjvCEz7S2M",
   authDomain: "seisakuresearch00.firebaseapp.com",
@@ -45,17 +44,15 @@ const getMeetingDoc = (id) => doc(db, 'artifacts', appId, 'public', 'data', 'mee
 const getSystemConfigDoc = () => doc(db, 'artifacts', appId, 'public', 'data', 'config', 'system');
 
 // 日本の行政機関の建制順
-const MINISTRY_ORDER = [
-  "内閣官房", "内閣府", "デジタル庁", "復興庁", "総務省", "法務省", "外務省", "財務省", 
-  "文部科学省", "厚生労働省", "農林水産省", "経済産業省", "国土交通省", "環境省", "原子力規制委員会", "防衛省"
-];
+const MINISTRY_ORDER = ["内閣官房", "内閣府", "デジタル庁", "復興庁", "総務省", "法務省", "外務省", "財務省", "文部科学省", "厚生労働省", "農林水産省", "経済産業省", "国土交通省", "環境省", "原子力規制委員会", "防衛省"];
 
-// --- ユーティリティ関数 ---
+// --- ユーティリティ ---
 const normalizeText = (str) => {
   if (!str) return "";
   return str.replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/　/g, " ").replace(/\s+/g, " ").trim();
 };
 
+// 日付文字列からタイムスタンプを抽出
 const parseDateToTs = (str) => {
   if (!str) return 0;
   try {
@@ -77,12 +74,18 @@ const parseDateToTs = (str) => {
   } catch (e) { return 0; }
 };
 
-const formatToWesternDate = (str) => {
+// 表示用：西暦変換（ただしカッコ内の「第N回」などは保護する）
+const formatToWesternDatePreservingRound = (str) => {
   if (!str) return '';
   const ts = parseDateToTs(str);
-  if (ts === 0) return normalizeText(str).replace(/\s*\(.*?\)\s*/g, ''); 
+  if (ts === 0) return normalizeText(str);
+  
   const d = new Date(ts);
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  const baseDate = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  
+  // 元の文字列にカッコ書き（回数など）があれば抽出して結合
+  const roundMatch = str.match(/\((.*?)\)/);
+  return roundMatch ? `${baseDate} ${roundMatch[0]}` : baseDate;
 };
 
 const formatCheckTime = (ts) => {
@@ -98,21 +101,23 @@ export default function App() {
   const [isAutoUpdateOn, setIsAutoUpdateOn] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  // フィルター用ステート
+  // フィルター
   const [statusFilter, setStatusFilter] = useState('all');
   const [fieldFilter, setFieldFilter] = useState('all');
   const [agencyFilter, setAgencyFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 操作用ステート
+  // 操作
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [confirmingReadId, setConfirmingReadId] = useState(null); 
   const [editTarget, setEditTarget] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [isClearingErrors, setIsClearingErrors] = useState(false);
   const [checkingId, setCheckingId] = useState(null); 
   const [statusMsg, setStatusMsg] = useState("");
 
+  // 一括巡回
   const [isBulkChecking, setIsBulkChecking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [bulkCheckProgress, setBulkCheckProgress] = useState({ current: 0, total: 0 });
@@ -121,7 +126,7 @@ export default function App() {
 
   const wakeLockRef = useRef(null);
 
-  // 1. [最優先] 統計情報の算出 (ReferenceError 回避)
+  // 1. 統計情報
   const summary = useMemo(() => ({
     total: meetings.length,
     updated: meetings.filter(m => m.status === 'updated' && !m.isManual).length,
@@ -147,7 +152,7 @@ export default function App() {
     return () => { isMounted = false; unsubscribeAuth(); };
   }, []);
 
-  // 3. リアルタイムデータ同期 (onSnapshot)
+  // 3. リアルタイムデータ同期
   useEffect(() => {
     if (!user) return;
     setLoading(true);
@@ -187,17 +192,15 @@ export default function App() {
     return () => { unsubscribeConfig(); unsubscribeMeetings(); };
   }, [user]);
 
-  // --- 並び替えとプルダウンのロジック ---
+  // --- 並び替えとプルダウン ---
 
-  // [重要] 分野プルダウン: 「登録順 (createdAt順)」での出現順に固定
+  // [重要] 分野プルダウン: 「登録順 (createdAt順)」に完全固定
   const uniqueFields = useMemo(() => {
-    // 1. 作成日時で全データを昇順ソートしたコピーを作成
     const sortedByRegistration = [...meetings].sort((a, b) => {
       const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (Number(a.createdAt) || 0);
       const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (Number(b.createdAt) || 0);
       return timeA - timeB;
     });
-    // 2. その並び（AI・半導体、造船、量子...）に従って分野を抽出
     const fields = [];
     sortedByRegistration.forEach(m => {
       if (m.relatedField && m.relatedField !== '-' && !fields.includes(m.relatedField)) {
@@ -207,7 +210,7 @@ export default function App() {
     return fields;
   }, [meetings]);
 
-  // 表の表示用ソート (未読 ➡ エラー ➡ 登録順)
+  // 表のソート
   const sortedBaseList = useMemo(() => {
     return [...meetings].sort((a, b) => {
       const isUnreadA = a.status === 'updated'; const isUnreadB = b.status === 'updated';
@@ -222,7 +225,6 @@ export default function App() {
     });
   }, [meetings]);
 
-  // 所管プルダウン: 行政機関の建制順
   const uniqueAgencies = useMemo(() => {
     const agencies = Array.from(new Set(meetings.map(m => m.agency).filter(a => a && a !== '-')));
     return agencies.sort((a, b) => {
@@ -233,7 +235,6 @@ export default function App() {
     });
   }, [meetings]);
 
-  // フィルター適用後のリスト
   const filteredAndSortedMeetings = useMemo(() => {
     return sortedBaseList.filter(m => {
       const q = searchQuery.toLowerCase();
@@ -272,7 +273,6 @@ export default function App() {
     }
 
     if (!success) {
-      // 未読(updated)なら赤を維持し、エラーメッセージのみ更新
       const newPayload = { lastCheckedAt: serverTimestamp(), errorMessage: "接続失敗" };
       if (meeting.status !== 'updated') newPayload.status = 'error';
       await updateDoc(getMeetingDoc(meeting.id), newPayload);
@@ -284,10 +284,10 @@ export default function App() {
     const bodyText = normalizeText(tempDiv.innerText || tempDiv.textContent || "");
     
     let rounds = [];
-    const roundRegex = /第\s*?(\d+|元)\s*?回/g;
+    const roundRegex = /第\s*?([0-9０-９]+|元)\s*?回/g;
     let rMatch;
     while ((rMatch = roundRegex.exec(bodyText)) !== null) {
-      const num = rMatch[1] === '元' ? 1 : parseInt(rMatch[1], 10);
+      const num = rMatch[1] === '元' ? 1 : parseInt(normalizeText(rMatch[1]), 10);
       rounds.push({ str: rMatch[0], num, index: rMatch.index });
     }
 
@@ -325,9 +325,8 @@ export default function App() {
       const currentTs = meeting.latestDateTimestamp || 0;
       const currentRoundNum = (meeting.meetingRound || "").match(/\d+/) ? parseInt(meeting.meetingRound.match(/\d+/)[0], 10) : 0;
 
-      // 新着判定
       if (targetRound.num > currentRoundNum || (bestDate && bestDate.ts > currentTs)) {
-        const finalDate = bestDate ? formatToWesternDate(bestDate.str) : formatToWesternDate(meeting.latestDateString);
+        const finalDate = bestDate ? formatToWesternDatePreservingRound(bestDate.str) : formatToWesternDatePreservingRound(meeting.latestDateString);
         const combined = `${finalDate} (${targetRound.str})`;
         await updateDoc(getMeetingDoc(meeting.id), {
           latestDateString: combined, '直近開催日': combined,
@@ -336,7 +335,6 @@ export default function App() {
           status: 'updated', isManual: false, lastCheckedAt: serverTimestamp(), errorMessage: null
         });
       } else {
-        // 変化なしでも赤色(updated)は保護しつつ時刻のみ更新
         await updateDoc(getMeetingDoc(meeting.id), { lastCheckedAt: serverTimestamp(), errorMessage: null });
       }
     } else {
@@ -345,7 +343,7 @@ export default function App() {
     setCheckingId(null); setStatusMsg("");
   };
 
-  // --- 操作ハンドラ ---
+  // 一括巡回処理
   const handleBulkStart = async (targets) => {
     setConfirmBatchModal(null); setIsBulkChecking(true); setIsPaused(false);
     setBulkCheckProgress({ current: 0, total: targets.length });
@@ -399,6 +397,66 @@ export default function App() {
     }
   };
 
+  // エラー一括解除
+  const handleClearAllErrors = async () => {
+    if (!user || isClearingErrors) return;
+    const targets = meetings.filter(m => m.status === 'error');
+    if (targets.length === 0) return;
+    if (!window.confirm(`${targets.length} 件のエラー状態をすべて解除し、変更なしに戻しますか？`)) return;
+
+    setIsClearingErrors(true);
+    try {
+      const batch = writeBatch(db);
+      targets.forEach(m => {
+        const docRef = doc(db, 'artifacts', 'seisakuresearch', 'public', 'data', 'meetings', m.id);
+        batch.update(docRef, { status: 'unchanged', errorMessage: null });
+      });
+      await batch.commit();
+      setStatusMsg("エラー一括解除完了");
+    } catch (e) {
+      console.error("Batch update failed:", e);
+    } finally {
+      setTimeout(() => { setIsClearingErrors(false); setStatusMsg(""); }, 2000);
+    }
+  };
+
+  // --- 手動修正の保存ロジック (回数抽出に対応) ---
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editTarget || !user || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const rawInput = normalizeText(editTarget.latestDateString);
+      
+      // 入力から「第N回」を抽出
+      const roundMatch = rawInput.match(/第\s*?([0-9０-９]+|元)\s*?回/);
+      const extractedRound = roundMatch ? roundMatch[0] : (editTarget.meetingRound || "");
+
+      // 日付を西暦に変換
+      const westernDate = formatToWesternDatePreservingRound(rawInput);
+      const newTs = parseDateToTs(westernDate);
+
+      const updatePayload = {
+        '直近開催日': rawInput,
+        latestDateString: rawInput,
+        latestDateTimestamp: newTs,
+        meetingRound: extractedRound,
+        status: 'unchanged',
+        isManual: false,
+        errorMessage: null,
+        lastModifiedAt: serverTimestamp()
+      };
+
+      await updateDoc(getMeetingDoc(editTarget.id), updatePayload);
+      setEditTarget(null);
+    } catch (err) {
+      console.error("Save error:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleReadConfirm = (e, meeting) => {
     e.stopPropagation();
     if (confirmingReadId === meeting.id) {
@@ -425,21 +483,6 @@ export default function App() {
     const newVal = !isAutoUpdateOn;
     setIsAutoUpdateOn(newVal);
     try { await setDoc(getSystemConfigDoc(), { autoUpdateEnabled: newVal, lastModifiedAt: serverTimestamp() }, { merge: true }); } catch (e) { }
-  };
-
-  const handleSaveEdit = async (e) => {
-    e.preventDefault();
-    if (!editTarget || !user) return;
-    setIsSaving(true);
-    try {
-      const normalizedDate = formatToWesternDate(editTarget.latestDateString);
-      const newTs = parseDateToTs(normalizedDate);
-      await updateDoc(getMeetingDoc(editTarget.id), {
-        '直近開催日': normalizedDate, latestDateString: normalizedDate, latestDateTimestamp: newTs,
-        status: 'unchanged', isManual: false, errorMessage: null, lastModifiedAt: serverTimestamp()
-      });
-      setEditTarget(null);
-    } catch (e) { } finally { setIsSaving(false); }
   };
 
   if (loading && meetings.length === 0) return (
@@ -483,8 +526,14 @@ export default function App() {
             </div>
           </div>
           <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
+            {summary.error > 0 && (
+              <button onClick={handleClearAllErrors} disabled={isClearingErrors || isBulkChecking} className="flex items-center gap-2 px-5 py-2.5 bg-orange-50 text-orange-600 rounded-2xl font-black shadow-sm text-sm hover:bg-orange-100 border border-orange-200 transition-all active:scale-95 disabled:opacity-50">
+                {isClearingErrors ? <Loader2 className="w-5 h-5 animate-spin" /> : <AlertTriangle className="w-5 h-5" />} 
+                エラーを一括解除
+              </button>
+            )}
             {(summary.updated + summary.manual) > 0 && (
-              <button onClick={handleMarkAllRead} disabled={isMarkingAll} className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-600 rounded-2xl font-black shadow-sm text-sm hover:bg-gray-200 border border-gray-200 transition-all active:scale-95 disabled:opacity-50">
+              <button onClick={handleMarkAllRead} disabled={isMarkingAll || isBulkChecking} className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-600 rounded-2xl font-black shadow-sm text-sm hover:bg-gray-200 border border-gray-200 transition-all active:scale-95 disabled:opacity-50">
                 {isMarkingAll ? <Loader2 className="w-5 h-5 animate-spin" /> : <Eye className="w-5 h-5" />} 
                 全て既読にする
               </button>
@@ -641,7 +690,7 @@ export default function App() {
               <div className={`p-3 rounded-2xl shadow-inner ${isPaused ? 'bg-orange-50' : 'bg-indigo-50'}`}>
                 <RefreshCw className={`w-6 h-6 ${isPaused ? 'text-orange-600' : 'text-indigo-600 animate-spin'}`} />
               </div>
-              <h3 className="font-black text-gray-900 leading-none text-sm">{isPaused ? '一時停止中' : '巡回中...'}</h3>
+              <h3 className="font-black text-gray-900 leading-none text-sm">{isPaused ? '一時停止中' : '巡回実行中...'}</h3>
             </div>
             <div className="flex gap-1.5">
               {isPaused ? (
@@ -660,10 +709,6 @@ export default function App() {
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black text-gray-900 leading-none">{bulkCheckProgress.current}</span>
             <span className="text-xs font-bold text-gray-400">/ {bulkCheckProgress.total} 完了 ({Math.round((bulkCheckProgress.current / bulkCheckProgress.total) * 100)}%)</span>
-          </div>
-          <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
-            <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
-            <span className="text-[10px] font-bold text-gray-500 truncate uppercase tracking-widest italic">{statusMsg || '準備中...'}</span>
           </div>
           <div className="mt-3 flex items-center gap-1.5 text-[9px] font-black text-indigo-400 uppercase tracking-tighter italic text-center">
              Wake Lock Active - Sleepless Check
@@ -686,17 +731,38 @@ export default function App() {
         </div>
       )}
 
-      {/* 編集モーダル */}
+      {/* 編集モーダル (改善版) */}
       {editTarget && (
         <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4 font-sans">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-md p-8 border border-gray-100 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6"><h2 className="font-black text-gray-900 flex items-center gap-2 text-base leading-none"><Edit3 className="w-5 h-5 text-blue-600" /> データの修正</h2><button onClick={() => setEditTarget(null)} className="p-2 text-gray-400 hover:bg-gray-200 rounded-full transition-all"><X className="w-5 h-5" /></button></div>
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-8 border border-gray-100 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-black text-gray-900 flex items-center gap-2 text-base leading-none"><Edit3 className="w-5 h-5 text-blue-600" /> データの修正</h2>
+              <button onClick={() => setEditTarget(null)} className="p-2 text-gray-400 hover:bg-gray-200 rounded-full transition-all"><X className="w-5 h-5" /></button>
+            </div>
             <form onSubmit={handleSaveEdit} className="space-y-6">
-              <div><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">会議体名</label><div className="px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 text-xs truncate leading-relaxed">{editTarget.meetingName}</div></div>
-              <div><label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2 block px-1 leading-none font-black mb-2">開催日</label><input type="text" value={editTarget.latestDateString} onChange={e => setEditTarget({...editTarget, latestDateString: e.target.value})} className="w-full px-5 py-4 bg-indigo-50 border-2 border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-black text-indigo-700 text-sm shadow-inner" placeholder="令和〇年〇月〇日" /></div>
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-1">対象の会議体</label>
+                <div className="px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 text-xs truncate leading-relaxed">{editTarget.meetingName}</div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2 block px-1 leading-none font-black mb-2">
+                  開催日 (第N回も含めて入力)
+                </label>
+                <input 
+                  type="text" 
+                  autoFocus
+                  value={editTarget.latestDateString} 
+                  onChange={e => setEditTarget({...editTarget, latestDateString: e.target.value})} 
+                  className="w-full px-5 py-5 bg-indigo-50 border-2 border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-black text-indigo-700 text-base shadow-inner" 
+                  placeholder="例: 令和8年4月11日 (第15回)" 
+                />
+                <p className="mt-2 text-[10px] text-gray-400 px-1 font-bold italic">※「(第〇回)」と書くと回数も保存されます</p>
+              </div>
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setEditTarget(null)} className="flex-1 py-4 bg-gray-100 text-gray-400 font-black rounded-2xl hover:bg-gray-200 transition-all text-xs uppercase">キャンセル</button>
-                <button type="submit" disabled={isSaving} className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl transition-all active:scale-95 text-xs uppercase">{isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />} 保存</button>
+                <button type="submit" disabled={isSaving} className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95 text-xs uppercase flex items-center justify-center gap-2">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 保存する
+                </button>
               </div>
             </form>
           </div>
